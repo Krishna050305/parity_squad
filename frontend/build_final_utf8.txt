@@ -1,0 +1,19 @@
+﻿
+> lendpool-frontend@0.1.0 build
+> npm run generate:app-clients && tsc && vite build
+
+
+> lendpool-frontend@0.1.0 generate:app-clients
+> algokit project link --all
+
+Generating TypeScript client code for application specified in D:\Hackathons\parity_squad\projects\lendpool-contracts\smart_contracts\artifacts\loan_contract\LoanContract.arc56.json and writing to D:\Hackathons\parity_squad\frontend\src\contracts\LoanContract.ts
+Reading application.json file from path D:\Hackathons\parity_squad\projects\lendpool-contracts\smart_contracts\artifacts\loan_contract\LoanContract.arc56.json
+Generating TS client for LoanContract
+Writing TS client to D:\Hackathons\parity_squad\frontend\src\contracts\LoanContract.ts
+Operation completed successfully
+
+1/1: Finished processing lendpool-contracts
+src/components/AppCalls.tsx(4,35): error TS2307: Cannot find module '../contracts/HelloWorld' or its corresponding type declarations.
+src/Home.tsx(73,9): error TS2353: Object literal may only specify known properties, and 'from' does not exist in type 'PaymentTransactionParams & CommonTransactionParams'.
+src/Home.tsx(93,29): error TS2339: Property 'OnComplete' does not exist on type 'typeof import("D:/Hackathons/parity_squad/frontend/node_modules/algosdk/dist/types/main")'.
+src/Home.tsx(115,13): error TS2353: Object literal may only specify known properties, and 'from' does not exist in type 'PaymentTransactionParams & CommonTransactionParams'.

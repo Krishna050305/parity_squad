@@ -7,21 +7,27 @@ logger = logging.getLogger(__name__)
 
 # define deployment behaviour based on supplied app spec
 def deploy() -> None:
-    from smart_contracts.artifacts.hello_world.hello_world_client import (
-        HelloArgs,
-        HelloWorldFactory,
+    from smart_contracts.artifacts.loan_contract.loan_contract_client import (
+        CreateLoanArgs,
+        LoanContractFactory,
     )
 
     algorand = algokit_utils.AlgorandClient.from_environment()
     deployer_ = algorand.account.from_environment("DEPLOYER")
 
     factory = algorand.client.get_typed_app_factory(
-        HelloWorldFactory, default_sender=deployer_.address
+        LoanContractFactory, default_sender=deployer_.address
     )
 
     app_client, result = factory.deploy(
         on_update=algokit_utils.OnUpdate.AppendApp,
         on_schema_break=algokit_utils.OnSchemaBreak.AppendApp,
+        create_params=CreateLoanArgs(
+            goal_amount=1_000_000,  # 1 ALGO
+            duration_days=30,
+            tier_required=0,
+            badge_asa_id=0,
+        ),
     )
 
     if result.operation_performed in [
@@ -36,9 +42,6 @@ def deploy() -> None:
             )
         )
 
-    name = "world"
-    response = app_client.send.hello(args=HelloArgs(name=name))
     logger.info(
-        f"Called hello on {app_client.app_name} ({app_client.app_id}) "
-        f"with name={name}, received: {response.abi_return}"
+        f"Deployed LoanContract ({app_client.app_name}) with App ID: {app_client.app_id}"
     )

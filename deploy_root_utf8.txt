@@ -1,0 +1,23 @@
+﻿WARNING: The 'deploy' command is scheduled for deprecation in v2.x release. Please migrate to using 'algokit project deploy' instead.
+Using deploy command: C:\Users\smit\.local\bin\poetry.EXE run python -m smart_contracts deploy --arc56 projects\lendpool-contracts\smart_contracts\artifacts\loan_contract\LoanContract.arc56.json --network localnet --create-arg goal_amount:1000000 --create-arg duration_days:30 --create-arg tier_required:0 --create-arg badge_asa_id:0
+Loading deployment environment variables...
+algokit : Error: No such 
+file: D:\Hackathons\parity
+_squad\projects\lendpool-c
+ontracts\.env.create
+At line:1 char:1
++ algokit deploy create 
+--arc56 projects/lendpool-
+contracts/smart_contr ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (E  
+  rror: No such ...cts\   
+ .env.create:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
