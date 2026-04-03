@@ -1,0 +1,41 @@
+.lora-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  padding: 0.8rem 1.2rem;
+  border-radius: 30px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  z-index: 1000;
+  transition: all 0.2s ease;
+  animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.lora-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border-color: var(--brand-blue);
+  color: var(--brand-blue);
+}
+
+.lora-icon {
+  font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+  .lora-fab {
+    bottom: 16px;
+    right: 16px;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+}

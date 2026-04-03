@@ -1,22 +1,24 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { connectWallet, disconnectWallet } from '../wallet';
+import ReputationBadge from './ReputationBadge';
 import './Navbar.css';
 
 interface NavbarProps {
   walletAddress: string;
-  setWalletAddress: (addr: string) => void;
+  onWalletConnect: (addr: string) => void;
+  onWalletDisconnect: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ walletAddress, setWalletAddress }) => {
+const Navbar: React.FC<NavbarProps> = ({ walletAddress, onWalletConnect, onWalletDisconnect }) => {
   const handleConnect = async () => {
     const addr = await connectWallet();
-    if (addr) setWalletAddress(addr);
+    if (addr) onWalletConnect(addr);
   };
 
   const handleDisconnect = () => {
     disconnectWallet();
-    setWalletAddress('');
+    onWalletDisconnect();
   };
 
   const truncateAddress = (addr: string) => {
@@ -37,6 +39,7 @@ const Navbar: React.FC<NavbarProps> = ({ walletAddress, setWalletAddress }) => {
         <div className="navbar-wallet">
           {walletAddress ? (
             <div className="wallet-connected">
+              <ReputationBadge address={walletAddress} />
               <span className="wallet-address">{truncateAddress(walletAddress)}</span>
               <button className="btn btn-secondary btn-sm" onClick={handleDisconnect}>
                 Disconnect

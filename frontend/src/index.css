@@ -34,6 +34,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 a {
   text-decoration: none;
   color: inherit;
@@ -52,6 +56,13 @@ a {
   transition: all 0.2s ease;
   border: none;
   outline: none;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .btn-primary {
@@ -131,4 +142,11 @@ a {
 
 h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;
+}
+
+/* Base Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1rem;
+  }
 }

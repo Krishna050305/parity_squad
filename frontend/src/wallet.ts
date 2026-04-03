@@ -71,16 +71,31 @@ export async function signAndSendTxns(encodedTxns: string[]): Promise<string> {
     signers: [account] // Specify who can sign
   }));
 
-  // 3. Request signature from wallet
-  const signedTxnBytesArray = await peraWallet.signTransaction([txGroups]);
+  try {
+    // 3. Request signature from wallet
+    const signedTxnBytesArray = await peraWallet.signTransaction([txGroups]);
 
-  // 4. Send to network
-  const algodClient = getAlgodClient();
-  const response = await algodClient.sendRawTransaction(signedTxnBytesArray).do();
-  const txId = (response as any).txId || (response as any).txid;
+    // 4. Send to network
+    const algodClient = getAlgodClient();
+    const response = await algodClient.sendRawTransaction(signedTxnBytesArray).do();
+    const txId = (response as any).txId || (response as any).txid;
 
-  // 5. Wait for confirmation (optional, wait up to 4 rounds)
-  await algosdk.waitForConfirmation(algodClient, txId, 4);
+    // 5. Wait for confirmation (optional, wait up to 4 rounds)
+    await algosdk.waitForConfirmation(algodClient, txId, 4);
 
-  return txId;
+    return txId;
+  } catch (error: any) {
+    if (error?.data?.type === "USER_REJECT") {
+      throw new Error("Transaction cancelled by user.");
+    }
+    const errMsg = error?.message || String(error);
+    if (errMsg.includes("overspend")) {
+      throw new Error("Insufficient ALGO balance to cover transaction and fees.");
+    }
+    if (errMsg.includes("Network request error") || errMsg.includes("fetch")) {
+      throw new Error("Network error — please check your connection.");
+    }
+    
+    throw new Error(errMsg);
+  }
 }

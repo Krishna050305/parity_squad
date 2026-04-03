@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatusBadge from './StatusBadge';
 import TierBadge from './TierBadge';
+import ReputationBadge from './ReputationBadge';
 import './LoanCard.css';
 
 interface LoanCardProps {
@@ -61,7 +62,10 @@ const LoanCard: React.FC<LoanCardProps> = ({
             {avatarChars}
           </div>
           <div className="loan-card-borrower-info">
-            <span className="loan-card-address">{truncatedAddr}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="loan-card-address">{truncatedAddr}</span>
+              <ReputationBadge address={borrower} />
+            </div>
             <TierBadge tier={tierRequired} />
           </div>
         </div>
