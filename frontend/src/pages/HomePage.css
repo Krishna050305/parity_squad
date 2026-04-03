@@ -3,9 +3,10 @@
   flex-direction: column;
 }
 
+/* ── Hero ── */
 .hero {
-  padding: 6rem 2rem;
-  background: linear-gradient(135deg, rgba(22, 163, 74, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%);
+  padding: 5rem 2rem 4rem;
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.08) 0%, rgba(37, 99, 235, 0.04) 50%, rgba(217, 119, 6, 0.04) 100%);
   text-align: center;
   border-bottom: 1px solid var(--border);
 }
@@ -16,7 +17,7 @@
 }
 
 .hero-title {
-  font-size: 3.5rem;
+  font-size: 3.2rem;
   font-weight: 800;
   margin-bottom: 1.5rem;
   line-height: 1.1;
@@ -24,34 +25,174 @@
 }
 
 .text-gradient {
-  background: linear-gradient(to right, var(--brand-green), var(--brand-blue));
+  background: linear-gradient(135deg, var(--brand-green), var(--brand-blue));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .hero-subtitle {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   color: var(--muted);
   margin-bottom: 2.5rem;
-  line-height: 1.6;
+  line-height: 1.7;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
 }
 
 .btn-lg {
-  padding: 0.8rem 2rem;
-  font-size: 1.1rem;
+  padding: 0.85rem 2.2rem;
+  font-size: 1.05rem;
+}
+
+/* ── Community Feed ── */
+.community-feed {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
 }
 
 .section-title {
   text-align: center;
-  font-size: 2rem;
-  margin-bottom: 3rem;
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-subtitle {
+  text-align: center;
+  color: var(--muted);
+  font-size: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+/* Loan Grid */
+.loan-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .loan-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .loan-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-title {
+    font-size: 2.2rem;
+  }
+
+  .hero {
+    padding: 3rem 1.5rem 2.5rem;
+  }
+}
+
+/* ── Feed States ── */
+.feed-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+}
+
+.state-icon {
+  font-size: 3.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.feed-state h3 {
+  font-size: 1.3rem;
+  color: var(--text);
+}
+
+.feed-state p {
+  color: var(--muted);
+  max-width: 400px;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Skeleton Loading ── */
+.skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  pointer-events: none;
+}
+
+.skeleton-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.skeleton-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background-color: #e7e5e4;
+  flex-shrink: 0;
+}
+
+.skeleton-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  background-color: #e7e5e4;
+}
+
+.skeleton-bar {
+  height: 8px;
+  border-radius: 4px;
+  background-color: #e7e5e4;
+  width: 100%;
+}
+
+/* Shimmer Animation */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #e7e5e4 25%,
+    #f5f5f4 50%,
+    #e7e5e4 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Features ── */
+.features {
+  padding-bottom: 4rem;
 }
 
 .feature-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
 }
 
 .feature-card {
@@ -60,20 +201,22 @@
 }
 
 .feature-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-4px);
 }
 
 .feature-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .feature-card h3 {
-  font-size: 1.25rem;
-  margin-bottom: 0.75rem;
+  font-size: 1.15rem;
+  margin-bottom: 0.5rem;
   color: var(--brand-green-dark);
 }
 
 .feature-card p {
   color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
 }

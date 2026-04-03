@@ -1,0 +1,33 @@
+.tx-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  background-color: #ecfdf5;
+  color: var(--brand-green-dark);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: 1px solid #d1fae5;
+}
+
+.tx-badge:hover {
+  background-color: #d1fae5;
+  transform: translateY(-1px);
+}
+
+.tx-check {
+  font-size: 0.8rem;
+}
+
+.tx-text {
+  font-weight: 600;
+}
+
+.tx-hash {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+}
