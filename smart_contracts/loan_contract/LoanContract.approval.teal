@@ -1,0 +1,594 @@
+#pragma version 11
+#pragma typetrack false
+
+// algopy.arc4.ARC4Contract.approval_program() -> uint64:
+main:
+    intcblock 0 1 8 3
+    bytecblock "status" "goal_amount" "repaid_amount" "borrower" "funded_amount" "deadline" "contribution" "guarantor" "tier_required" "tier_badge_id" "claimed"
+    txn ApplicationID
+    bnz main_after_if_else@2
+    // smart_contracts/loan_contract/contract.py:19-20
+    // # Global State
+    // self.borrower = arc4.Address()
+    bytec_3 // "borrower"
+    global ZeroAddress
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:21
+    // self.goal_amount = UInt64(0)
+    bytec_1 // "goal_amount"
+    intc_0 // 0
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:22
+    // self.funded_amount = UInt64(0)
+    bytec 4 // "funded_amount"
+    intc_0 // 0
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:23
+    // self.repaid_amount = UInt64(0)
+    bytec_2 // "repaid_amount"
+    intc_0 // 0
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:24
+    // self.status = UInt64(0) # 1=OPEN, 2=FUNDED, 3=REPAYING, 4=CLOSED, 5=DEFAULTED
+    bytec_0 // "status"
+    intc_0 // 0
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:25
+    // self.deadline = UInt64(0)
+    bytec 5 // "deadline"
+    intc_0 // 0
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:26
+    // self.guarantor = arc4.Address()
+    bytec 7 // "guarantor"
+    global ZeroAddress
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:27
+    // self.tier_required = UInt64(0)
+    bytec 8 // "tier_required"
+    intc_0 // 0
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:28
+    // self.tier_badge_id = UInt64(0)
+    bytec 9 // "tier_badge_id"
+    intc_0 // 0
+    app_global_put
+
+main_after_if_else@2:
+    // smart_contracts/loan_contract/contract.py:13
+    // class LoanContract(ARC4Contract):
+    txn OnCompletion
+    !
+    assert
+    txn ApplicationID
+    bz main_create_NoOp@12
+    pushbytess 0x4acd939d 0xe319d423 0xfb20697a 0xc5e0f937 0x56ae6ecb 0xf8e8a2f0 // method "fund_loan(pay)void", method "repay_loan(pay)void", method "claim_repayment()void", method "add_guarantor(address)void", method "mark_default()void", method "get_loan_info()uint64[]"
+    txna ApplicationArgs 0
+    match fund_loan repay_loan claim_repayment add_guarantor mark_default get_loan_info
+    err
+
+main_create_NoOp@12:
+    // smart_contracts/loan_contract/contract.py:13
+    // class LoanContract(ARC4Contract):
+    pushbytes 0xdc85f076 // method "create_loan(uint64,uint64,uint64,uint64)void"
+    txna ApplicationArgs 0
+    match create_loan
+    err
+
+
+// smart_contracts.loan_contract.contract.LoanContract.create_loan[routing]() -> void:
+create_loan:
+    // smart_contracts/loan_contract/contract.py:30
+    // @arc4.abimethod(create="require")
+    txna ApplicationArgs 1
+    dup
+    len
+    intc_2 // 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    txna ApplicationArgs 2
+    dup
+    len
+    intc_2 // 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    txna ApplicationArgs 3
+    dup
+    len
+    intc_2 // 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    txna ApplicationArgs 4
+    dup
+    len
+    intc_2 // 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    // smart_contracts/loan_contract/contract.py:38
+    // self.borrower = arc4.Address(Txn.sender)
+    bytec_3 // "borrower"
+    txn Sender
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:39
+    // self.goal_amount = goal_amount
+    bytec_1 // "goal_amount"
+    uncover 4
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:40
+    // self.funded_amount = UInt64(0)
+    bytec 4 // "funded_amount"
+    intc_0 // 0
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:41
+    // self.repaid_amount = UInt64(0)
+    bytec_2 // "repaid_amount"
+    intc_0 // 0
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:42
+    // self.status = UInt64(1)  # OPEN
+    bytec_0 // "status"
+    intc_1 // 1
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:43
+    // self.deadline = Global.latest_timestamp + duration_days * UInt64(86400)
+    global LatestTimestamp
+    uncover 3
+    pushint 86400
+    *
+    +
+    bytec 5 // "deadline"
+    swap
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:44
+    // self.tier_required = tier_required
+    bytec 8 // "tier_required"
+    uncover 2
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:45
+    // self.tier_badge_id = badge_asa_id
+    bytec 9 // "tier_badge_id"
+    swap
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:30
+    // @arc4.abimethod(create="require")
+    intc_1 // 1
+    return
+
+
+// smart_contracts.loan_contract.contract.LoanContract.fund_loan[routing]() -> void:
+fund_loan:
+    // smart_contracts/loan_contract/contract.py:48
+    // @arc4.abimethod
+    txn GroupIndex
+    intc_1 // 1
+    -
+    dup
+    gtxns TypeEnum
+    intc_1 // pay
+    ==
+    assert // transaction type is pay
+    // smart_contracts/loan_contract/contract.py:50
+    // assert self.status == UInt64(1), "Loan is not OPEN"
+    intc_0 // 0
+    bytec_0 // "status"
+    app_global_get_ex
+    assert // check self.status exists
+    intc_1 // 1
+    ==
+    assert // Loan is not OPEN
+    // smart_contracts/loan_contract/contract.py:51
+    // assert Global.latest_timestamp < self.deadline, "Loan deadline has passed"
+    global LatestTimestamp
+    intc_0 // 0
+    bytec 5 // "deadline"
+    app_global_get_ex
+    assert // check self.deadline exists
+    <
+    assert // Loan deadline has passed
+    // smart_contracts/loan_contract/contract.py:52
+    // assert payment.receiver == Global.current_application_address, "Payment must be to the contract"
+    dup
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    assert // Payment must be to the contract
+    // smart_contracts/loan_contract/contract.py:54
+    // self.funded_amount += payment.amount
+    intc_0 // 0
+    bytec 4 // "funded_amount"
+    app_global_get_ex
+    assert // check self.funded_amount exists
+    swap
+    gtxns Amount
+    swap
+    dig 1
+    +
+    bytec 4 // "funded_amount"
+    dig 1
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:55
+    // self.contribution[Txn.sender] = self.contribution.get(Txn.sender, UInt64(0)) + payment.amount
+    txn Sender
+    intc_0 // 0
+    bytec 6 // "contribution"
+    app_local_get_ex
+    intc_0 // 0
+    cover 2
+    select
+    uncover 2
+    +
+    txn Sender
+    bytec 6 // "contribution"
+    uncover 2
+    app_local_put
+    // smart_contracts/loan_contract/contract.py:57
+    // if self.funded_amount >= self.goal_amount:
+    intc_0 // 0
+    bytec_1 // "goal_amount"
+    app_global_get_ex
+    assert // check self.goal_amount exists
+    >=
+    bz fund_loan_after_if_else@3
+    // smart_contracts/loan_contract/contract.py:61-65
+    // itxn.Payment(
+    //     receiver=self.borrower.native,
+    //     amount=self.goal_amount,
+    //     fee=0,
+    // ).submit()
+    itxn_begin
+    // smart_contracts/loan_contract/contract.py:62
+    // receiver=self.borrower.native,
+    intc_0 // 0
+    bytec_3 // "borrower"
+    app_global_get_ex
+    assert // check self.borrower exists
+    // smart_contracts/loan_contract/contract.py:63
+    // amount=self.goal_amount,
+    intc_0 // 0
+    bytec_1 // "goal_amount"
+    app_global_get_ex
+    assert // check self.goal_amount exists
+    itxn_field Amount
+    itxn_field Receiver
+    // smart_contracts/loan_contract/contract.py:61
+    // itxn.Payment(
+    intc_1 // pay
+    itxn_field TypeEnum
+    // smart_contracts/loan_contract/contract.py:64
+    // fee=0,
+    intc_0 // 0
+    itxn_field Fee
+    // smart_contracts/loan_contract/contract.py:61-65
+    // itxn.Payment(
+    //     receiver=self.borrower.native,
+    //     amount=self.goal_amount,
+    //     fee=0,
+    // ).submit()
+    itxn_submit
+    // smart_contracts/loan_contract/contract.py:66
+    // self.status = UInt64(3)  # REPAYING
+    bytec_0 // "status"
+    intc_3 // 3
+    app_global_put
+
+fund_loan_after_if_else@3:
+    // smart_contracts/loan_contract/contract.py:48
+    // @arc4.abimethod
+    intc_1 // 1
+    return
+
+
+// smart_contracts.loan_contract.contract.LoanContract.repay_loan[routing]() -> void:
+repay_loan:
+    // smart_contracts/loan_contract/contract.py:68
+    // @arc4.abimethod
+    txn GroupIndex
+    intc_1 // 1
+    -
+    dup
+    gtxns TypeEnum
+    intc_1 // pay
+    ==
+    assert // transaction type is pay
+    // smart_contracts/loan_contract/contract.py:70
+    // assert self.status == UInt64(3), "Loan is not REPAYING"
+    intc_0 // 0
+    bytec_0 // "status"
+    app_global_get_ex
+    assert // check self.status exists
+    intc_3 // 3
+    ==
+    assert // Loan is not REPAYING
+    // smart_contracts/loan_contract/contract.py:71
+    // assert payment.sender == self.borrower.native, "Only borrower can repay"
+    dup
+    gtxns Sender
+    intc_0 // 0
+    bytec_3 // "borrower"
+    app_global_get_ex
+    assert // check self.borrower exists
+    ==
+    assert // Only borrower can repay
+    // smart_contracts/loan_contract/contract.py:72
+    // assert payment.receiver == Global.current_application_address, "Payment must be to the contract"
+    dup
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    assert // Payment must be to the contract
+    // smart_contracts/loan_contract/contract.py:74
+    // self.repaid_amount += payment.amount
+    intc_0 // 0
+    bytec_2 // "repaid_amount"
+    app_global_get_ex
+    assert // check self.repaid_amount exists
+    swap
+    gtxns Amount
+    +
+    bytec_2 // "repaid_amount"
+    dig 1
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:75
+    // if self.repaid_amount >= self.goal_amount:
+    intc_0 // 0
+    bytec_1 // "goal_amount"
+    app_global_get_ex
+    assert // check self.goal_amount exists
+    >=
+    bz repay_loan_after_if_else@3
+    // smart_contracts/loan_contract/contract.py:76
+    // self.status = UInt64(4)  # CLOSED
+    bytec_0 // "status"
+    pushint 4
+    app_global_put
+
+repay_loan_after_if_else@3:
+    // smart_contracts/loan_contract/contract.py:68
+    // @arc4.abimethod
+    intc_1 // 1
+    return
+
+
+// smart_contracts.loan_contract.contract.LoanContract.claim_repayment[routing]() -> void:
+claim_repayment:
+    // smart_contracts/loan_contract/contract.py:80
+    // assert self.status == UInt64(4), "Loan is not CLOSED"
+    intc_0 // 0
+    bytec_0 // "status"
+    app_global_get_ex
+    assert // check self.status exists
+    pushint 4
+    ==
+    assert // Loan is not CLOSED
+    // smart_contracts/loan_contract/contract.py:82
+    // contribution = self.contribution.get(Txn.sender, UInt64(0))
+    txn Sender
+    intc_0 // 0
+    bytec 6 // "contribution"
+    app_local_get_ex
+    intc_0 // 0
+    cover 2
+    select
+    // smart_contracts/loan_contract/contract.py:83
+    // assert contribution > 0, "No contribution found"
+    dup
+    assert // No contribution found
+    // smart_contracts/loan_contract/contract.py:84
+    // assert self.claimed.get(Txn.sender, UInt64(0)) == 0, "Already claimed"
+    txn Sender
+    intc_0 // 0
+    bytec 10 // "claimed"
+    app_local_get_ex
+    intc_0 // 0
+    cover 2
+    select
+    !
+    assert // Already claimed
+    // smart_contracts/loan_contract/contract.py:86-87
+    // # Calculate pro-rata share: (contribution * repaid_amount) // goal_amount
+    // share = (contribution * self.repaid_amount) // self.goal_amount
+    intc_0 // 0
+    bytec_2 // "repaid_amount"
+    app_global_get_ex
+    assert // check self.repaid_amount exists
+    *
+    intc_0 // 0
+    bytec_1 // "goal_amount"
+    app_global_get_ex
+    assert // check self.goal_amount exists
+    /
+    // smart_contracts/loan_contract/contract.py:89-93
+    // itxn.Payment(
+    //     receiver=Txn.sender,
+    //     amount=share,
+    //     fee=0,
+    // ).submit()
+    itxn_begin
+    // smart_contracts/loan_contract/contract.py:90
+    // receiver=Txn.sender,
+    txn Sender
+    dig 1
+    itxn_field Amount
+    itxn_field Receiver
+    // smart_contracts/loan_contract/contract.py:89
+    // itxn.Payment(
+    intc_1 // pay
+    itxn_field TypeEnum
+    // smart_contracts/loan_contract/contract.py:92
+    // fee=0,
+    intc_0 // 0
+    itxn_field Fee
+    // smart_contracts/loan_contract/contract.py:89-93
+    // itxn.Payment(
+    //     receiver=Txn.sender,
+    //     amount=share,
+    //     fee=0,
+    // ).submit()
+    itxn_submit
+    // smart_contracts/loan_contract/contract.py:95
+    // self.claimed[Txn.sender] = share
+    txn Sender
+    bytec 10 // "claimed"
+    uncover 2
+    app_local_put
+    // smart_contracts/loan_contract/contract.py:78
+    // @arc4.abimethod
+    intc_1 // 1
+    return
+
+
+// smart_contracts.loan_contract.contract.LoanContract.add_guarantor[routing]() -> void:
+add_guarantor:
+    // smart_contracts/loan_contract/contract.py:97
+    // @arc4.abimethod
+    txna ApplicationArgs 1
+    dup
+    len
+    pushint 32
+    ==
+    assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
+    // smart_contracts/loan_contract/contract.py:99
+    // assert self.status == UInt64(1), "Loan is not OPEN"
+    intc_0 // 0
+    bytec_0 // "status"
+    app_global_get_ex
+    assert // check self.status exists
+    intc_1 // 1
+    ==
+    assert // Loan is not OPEN
+    // smart_contracts/loan_contract/contract.py:100
+    // assert Txn.sender == self.borrower.native, "Only borrower can add guarantor"
+    txn Sender
+    intc_0 // 0
+    bytec_3 // "borrower"
+    app_global_get_ex
+    assert // check self.borrower exists
+    ==
+    assert // Only borrower can add guarantor
+    // smart_contracts/loan_contract/contract.py:101
+    // self.guarantor = guarantor
+    bytec 7 // "guarantor"
+    swap
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:97
+    // @arc4.abimethod
+    intc_1 // 1
+    return
+
+
+// smart_contracts.loan_contract.contract.LoanContract.mark_default[routing]() -> void:
+mark_default:
+    // smart_contracts/loan_contract/contract.py:105
+    // assert self.status == UInt64(3), "Loan is not REPAYING"
+    intc_0 // 0
+    bytec_0 // "status"
+    app_global_get_ex
+    assert // check self.status exists
+    intc_3 // 3
+    ==
+    assert // Loan is not REPAYING
+    // smart_contracts/loan_contract/contract.py:106
+    // assert Global.latest_timestamp > self.deadline, "Deadline has not passed"
+    global LatestTimestamp
+    intc_0 // 0
+    bytec 5 // "deadline"
+    app_global_get_ex
+    assert // check self.deadline exists
+    >
+    assert // Deadline has not passed
+    // smart_contracts/loan_contract/contract.py:107
+    // self.status = UInt64(5)  # DEFAULTED
+    bytec_0 // "status"
+    pushint 5
+    app_global_put
+    // smart_contracts/loan_contract/contract.py:103
+    // @arc4.abimethod
+    intc_1 // 1
+    return
+
+
+// smart_contracts.loan_contract.contract.LoanContract.get_loan_info[routing]() -> void:
+get_loan_info:
+    // smart_contracts/loan_contract/contract.py:113
+    // res.append(arc4.UInt64(self.goal_amount))
+    intc_0 // 0
+    bytec_1 // "goal_amount"
+    app_global_get_ex
+    assert // check self.goal_amount exists
+    itob
+    // smart_contracts/loan_contract/contract.py:111-112
+    // # Returns (goal_amount, funded_amount, repaid_amount, status)
+    // res = arc4.DynamicArray[arc4.UInt64]()
+    pushbytes 0x0000
+    // smart_contracts/loan_contract/contract.py:113
+    // res.append(arc4.UInt64(self.goal_amount))
+    swap
+    concat // on error: max array length exceeded
+    pushbytes 0x0001
+    replace2 0
+    // smart_contracts/loan_contract/contract.py:114
+    // res.append(arc4.UInt64(self.funded_amount))
+    intc_0 // 0
+    bytec 4 // "funded_amount"
+    app_global_get_ex
+    assert // check self.funded_amount exists
+    itob
+    dig 1
+    swap
+    concat // on error: max array length exceeded
+    swap
+    intc_0 // 0
+    extract_uint16
+    intc_1 // 1
+    +
+    itob
+    extract 6 2
+    replace2 0
+    // smart_contracts/loan_contract/contract.py:115
+    // res.append(arc4.UInt64(self.repaid_amount))
+    intc_0 // 0
+    bytec_2 // "repaid_amount"
+    app_global_get_ex
+    assert // check self.repaid_amount exists
+    itob
+    dig 1
+    swap
+    concat // on error: max array length exceeded
+    swap
+    intc_0 // 0
+    extract_uint16
+    intc_1 // 1
+    +
+    itob
+    extract 6 2
+    replace2 0
+    // smart_contracts/loan_contract/contract.py:116
+    // res.append(arc4.UInt64(self.status))
+    intc_0 // 0
+    bytec_0 // "status"
+    app_global_get_ex
+    assert // check self.status exists
+    itob
+    dig 1
+    swap
+    concat // on error: max array length exceeded
+    swap
+    intc_0 // 0
+    extract_uint16
+    intc_1 // 1
+    +
+    itob
+    extract 6 2
+    replace2 0
+    // smart_contracts/loan_contract/contract.py:109
+    // @arc4.abimethod(readonly=True)
+    pushbytes 0x151f7c75
+    swap
+    concat
+    log
+    intc_1 // 1
+    return
