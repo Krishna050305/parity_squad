@@ -1,0 +1,49 @@
+﻿2.10.2 found in cache C:\Users\smit\AppData\Local\algokit\last-version-check
+Current version is up to date
+Searching for project installed client generator
+Running 'poetry show algokit-client-generator --tree' in 'D:\Hackathons\parity_squad\projects\lendpool-contracts'
+poetry: algokit-client-generator 2.2.0 Algorand typed client Generator
+poetry: `-- algokit-utils >=4.0.1,<5.0.0
+poetry: |-- httpx >=0.23.1,<=0.28.1
+poetry: |   |-- anyio *
+poetry: |   |   |-- idna >=2.8
+poetry: |   |   `-- typing-extensions >=4.5
+poetry: |   |-- certifi *
+poetry: |   |-- httpcore ==1.*
+poetry: |   |   |-- certifi * (circular dependency aborted here)
+poetry: |   |   `-- h11 >=0.16
+poetry: |   `-- idna * (circular dependency aborted here)
+poetry: |-- py-algorand-sdk >=2.11.0,<3.0.0
+poetry: |   |-- msgpack >=1.0.0,<2
+poetry: |   |-- pycryptodomex >=3.6.0,<4
+poetry: |   `-- pynacl >=1.4.0,<2
+poetry: |       `-- cffi >=2.0.0
+poetry: |           `-- pycparser *
+poetry: `-- typing-extensions >=4.6.0 (circular dependency aborted here)
+Generating Python client code for application specified in D:\Hackathons\parity_squad\projects\lendpool-contracts\smart_contracts\artifacts\loan_contract\LoanContract.arc56.json and writing to D:\Hackathons\parity_squad\projects\lendpool-contracts\smart_contracts\artifacts\loan_contract\loan_contract_client.py
+Running 'poetry run algokitgen-py -a D:\Hackathons\parity_squad\projects\lendpool-contracts\smart_contracts\artifacts\loan_contract\LoanContract.arc56.json -o D:\Hackathons\parity_squad\projects\lendpool-contracts\smart_contracts\artifacts\loan_contract\loan_contract_client.py' in 'D:\Hackathons\parity_squad\projects\lendpool-contracts'
+
+algokit : Client 
+generation failed for D:\H
+ackathons\parity_squad\pro
+jects\lendpool-contracts\s
+mart_contracts\artifacts\l
+oan_contract\LoanContract.
+arc56.json.
+At line:1 char:1
++ algokit --verbose 
+generate client D:\Hackath
+ons\parity_squad\projects 
+...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (C  
+  lient generati...act.   
+ arc56.json.:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 

@@ -1,0 +1,81 @@
+﻿Deploying from: ISQOKJEG25A2NT7D2F5X3VQ5ZXBGBI4JTU4F3GLAO5OIT4QE7P7TINZKLM
+poetry : Traceback 
+(most recent call 
+last):
+At line:1 char:1
++ poetry run python 
+manual_deploy.py > 
+deploy_v3.txt 2>&1; 
+Get-Content  ...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo     
+         : 
+NotSpecified: (T    
+raceback (most recent  
+   call last)::String) 
+    [], RemoteException
+    + 
+FullyQualifiedError    
+Id : NativeCommandErr  
+  or
+ 
+  File "D:\Hackathons\p
+arity_squad\projects\le
+ndpool-contracts\manual
+_deploy.py", line 51, 
+in <module>
+    main()
+    ~~~~^^
+  File "D:\Hackathons\p
+arity_squad\projects\le
+ndpool-contracts\manual
+_deploy.py", line 19, 
+in main
+    factory = algorand.
+client.get_app_factory(
+        
+app_spec=ARTIFACT_PATH,
+        default_sender=
+deployer.address
+    )
+  File "D:\Hackathons\p
+arity_squad\projects\le
+ndpool-contracts\.venv\
+Lib\site-packages\algok
+it_utils\clients\client
+_manager.py", line 
+246, in get_app_factory
+    return AppFactory(
+        
+AppFactoryParams(
+    ...<7 lines>...
+        )
+    )
+  File "D:\Hackathons\p
+arity_squad\projects\le
+ndpool-contracts\.venv\
+Lib\site-packages\algok
+it_utils\applications\a
+pp_factory.py", line 
+632, in __init__
+    self._app_spec = Ap
+pClient.normalise_app_s
+pec(params.app_spec)
+                     ~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~^^^^^^^^^^^^^^^^^
+  File "D:\Hackathons\p
+arity_squad\projects\le
+ndpool-contracts\.venv\
+Lib\site-packages\algok
+it_utils\applications\a
+pp_client.py", line 
+1428, in 
+normalise_app_spec
+    raise 
+ValueError("Invalid 
+app spec format")
+ValueError: Invalid 
+app spec format

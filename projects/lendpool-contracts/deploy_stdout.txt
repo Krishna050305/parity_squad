@@ -1,0 +1,58 @@
+﻿poetry : 2026-04-03 
+15:26:03,408 INFO      : 
+Loading .env
+At line:1 char:1
++ poetry run python -m 
+smart_contracts deploy > 
+deploy_output.txt 2>&1; 
+...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (2  
+  026-04-03 15:2... : L   
+ oading .env:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+2026-04-03 15:26:03,411 
+INFO      : Deploying app 
+loan_contract
+Traceback (most recent 
+call last):
+  File "<frozen runpy>", 
+line 198, in 
+_run_module_as_main
+  File "<frozen runpy>", 
+line 88, in _run_code
+  File "D:\Hackathons\pari
+ty_squad\projects\lendpool
+-contracts\smart_contracts
+\__main__.py", line 215, 
+in <module>
+    main(sys.argv[1])
+    ~~~~^^^^^^^^^^^^^
+  File "D:\Hackathons\pari
+ty_squad\projects\lendpool
+-contracts\smart_contracts
+\__main__.py", line 199, 
+in main
+    contract.deploy()
+    ~~~~~~~~~~~~~~~^^
+  File "D:\Hackathons\pari
+ty_squad\projects\lendpool
+-contracts\smart_contracts
+\loan_contract\deploy_conf
+ig.py", line 10, in deploy
+    from smart_contracts.a
+rtifacts.loan_contract.loa
+n_contract_client import (
+    ...<2 lines>...
+    )
+ModuleNotFoundError: No 
+module named 'smart_contra
+cts.artifacts.loan_contrac
+t.loan_contract_client'

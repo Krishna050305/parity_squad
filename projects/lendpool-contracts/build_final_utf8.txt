@@ -1,0 +1,121 @@
+﻿poetry : 2026-04-03 
+15:25:05,958 INFO      
+: Loading .env
+At line:1 char:1
++ poetry run python -m 
+smart_contracts build 
+> build_final.txt 
+2>&1; Ge ...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo     
+         : 
+NotSpecified: (2    
+026-04-03 15:2... : L  
+  oading .env:String) 
+[    ], RemoteException
+    + 
+FullyQualifiedError    
+Id : NativeCommandErr  
+  or
+ 
+2026-04-03 
+15:25:05,961 INFO      
+: Building app at D:\Ha
+ckathons\parity_squad\p
+rojects\lendpool-contra
+cts\smart_contracts\loa
+n_contract\contract.py
+2026-04-03 
+15:25:05,963 INFO      
+: Exporting D:\Hackatho
+ns\parity_squad\project
+s\lendpool-contracts\sm
+art_contracts\loan_cont
+ract\contract.py to D:\
+Hackathons\parity_squad
+\projects\lendpool-cont
+racts\smart_contracts\a
+rtifacts\loan_contract
+Traceback (most recent 
+call last):
+  File "<frozen 
+runpy>", line 198, in 
+_run_module_as_main
+  File "<frozen 
+runpy>", line 88, in 
+_run_code
+  File "D:\Hackathons\p
+arity_squad\projects\le
+ndpool-contracts\smart_
+contracts\__main__.py",
+ line 215, in <module>
+    main(sys.argv[1])
+    ~~~~^^^^^^^^^^^^^
+  File "D:\Hackathons\p
+arity_squad\projects\le
+ndpool-contracts\smart_
+contracts\__main__.py",
+ line 183, in main
+    
+build(artifact_path / 
+contract.name, 
+contract.path)
+    ~~~~~^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^
+  File "D:\Hackathons\p
+arity_squad\projects\le
+ndpool-contracts\smart_
+contracts\__main__.py",
+ line 158, in build
+    raise Exception(
+        f"Could not 
+generate typed client:\
+n{generate_result.stdou
+t}"
+    )
+Exception: Could not 
+generate typed client:
+Generating Python 
+client code for 
+application specified 
+in D:\Hackathons\parity
+_squad\projects\lendpoo
+l-contracts\smart_contr
+acts\artifacts\loan_con
+tract\LoanContract.arc5
+6.json and writing to D
+:\Hackathons\parity_squ
+ad\projects\lendpool-co
+ntracts\smart_contracts
+\artifacts\loan_contrac
+t\loan_contract_client.
+py
+
+Client generation 
+failed for D:\Hackathon
+s\parity_squad\projects
+\lendpool-contracts\sma
+rt_contracts\artifacts\
+loan_contract\LoanContr
+act.arc56.json.
+
+puyapy is already on your PATH and installed at D:\Hackathons\parity_squad\pro
+    jects\lendpool-contracts\.venv\Scripts\puyapy.EXE. Downloading and running
+    anyway.
+info: using puyapy version 5.7.1
+info: using python search path: ['C:\\Program Files\\Python313\\python313.zip', 'C:\\Program Files\\Python313\\DLLs', 'C:\\Program Files\\Python313', 'D:\\Hackathons\\parity_squad\\projects\\lendpool-contracts\\.venv', 'D:\\Hackathons\\parity_squad\\projects\\lendpool-contracts\\.venv\\Lib\\site-packages']
+info: Writing smart_contracts/artifacts/loan_contract/LoanContract.arc56.json
+info: Writing smart_contracts/artifacts/loan_contract/LoanContract.approval.teal
+info: Writing smart_contracts/artifacts/loan_contract/LoanContract.clear.teal
+info: Writing smart_contracts/artifacts/loan_contract/LoanContract.approval.puya.map
+info: Writing smart_contracts/artifacts/loan_contract/LoanContract.clear.puya.map
+
+
+LoanContract.arc56.json
+Generating Python client code for application specified in D:\Hackathons\parity_squad\projects\lendpool-contracts\smart_contracts\artifacts\loan_contract\LoanContract.arc56.json and writing to D:\Hackathons\parity_squad\projects\lendpool-contracts\smart_contracts\artifacts\loan_contract\loan_contract_client.py
+
+Client generation failed for D:\Hackathons\parity_squad\projects\lendpool-contracts\smart_contracts\artifacts\loan_contract\LoanContract.arc56.json.
+
