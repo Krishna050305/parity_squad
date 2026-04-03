@@ -39,10 +39,8 @@ export const Navbar = () => {
       <nav className="navbar">
         <div className="navbar__inner">
           {/* Logo */}
-          <Link to="/" className="navbar__logo" style={{ textDecoration: 'none' }}>
-            <div className="navbar__logo-icon">
-              <span style={{ color: 'white', fontSize: '0.9rem' }}>🏦</span>
-            </div>
+          <Link to="/" className="navbar__logo" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img src="/src/assets/lendpool_logo.png" alt="LendPool" style={{ height: '32px', width: 'auto', borderRadius: '4px' }} />
             LendPool
           </Link>
 

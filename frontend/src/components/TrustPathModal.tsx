@@ -135,7 +135,7 @@ export const TrustPathModal: React.FC<TrustPathModalProps> = ({ address }) => {
                     </>
                 ) : (
                     <>
-                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎉</div>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}></div>
                         <h2 style={{ color: 'var(--brand-green)' }}>All Set!</h2>
                         <p style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text)', margin: '1rem 0' }}>
                             {limitMsg}

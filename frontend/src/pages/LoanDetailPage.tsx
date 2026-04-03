@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import algosdk from 'algosdk';
 import { fetchLoanState, fetchLoanTxns, fundLoan, repayLoan, claimRepayment } from '../api';
 import { signAndSendTxns } from '../wallet';
@@ -39,6 +39,8 @@ const pillLabel: Record<InstallmentStatus, string> = {
 
 export const LoanDetailPage = () => {
   const { appId } = useParams<{ appId: string }>();
+  const location = useLocation();
+  const prefillAmount = location.state?.prefillAmount || '';
 
   // Check if it's a static profile ID (e.g. "agr-1") or a real app ID
   const isStaticProfile = appId && isNaN(Number(appId));
@@ -48,7 +50,7 @@ export const LoanDetailPage = () => {
   const [loan, setLoan] = useState<any>(null);
   const [txns, setTxns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [fundAmount, setFundAmount] = useState('');
+  const [fundAmount, setFundAmount] = useState(prefillAmount ? prefillAmount.toString() : '');
   const [repayAmount, setRepayAmount] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

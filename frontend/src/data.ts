@@ -22,11 +22,11 @@ export interface CategoryInfo {
 }
 
 export const categories: CategoryInfo[] = [
-  { key: 'agriculture', icon: '🌾', label: 'Agriculture & Farming', count: 142 },
-  { key: 'medical',     icon: '🏥', label: 'Medical Emergencies',  count: 89 },
-  { key: 'education',   icon: '📚', label: 'Education & Skill Building', count: 203 },
-  { key: 'housing',     icon: '🏠', label: 'Home & Housing',       count: 76 },
-  { key: 'business',    icon: '💼', label: 'Small Business',       count: 118 },
+  { key: 'agriculture', icon: 'A', label: 'Agriculture & Farming', count: 142 },
+  { key: 'medical',     icon: 'M', label: 'Medical Emergencies',  count: 89 },
+  { key: 'education',   icon: 'E', label: 'Education & Skill Building', count: 203 },
+  { key: 'housing',     icon: 'H', label: 'Home & Housing',       count: 76 },
+  { key: 'business',    icon: 'B', label: 'Small Business',       count: 118 },
 ];
 
 export const borrowerProfiles: BorrowerProfile[] = [

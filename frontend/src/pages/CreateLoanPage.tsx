@@ -58,7 +58,7 @@ export const CreateLoanPage = () => {
         return (
             <div style={{ padding: '6rem 2rem', textAlign: 'center', backgroundColor: '#fafaf9', minHeight: 'calc(100vh - 80px)' }}>
                 <div style={{ maxWidth: '600px', margin: '0 auto', background: 'white', padding: '4rem 2rem', border: '1px solid #eee', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎉</div>
+                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}></div>
                     <h2 style={{ fontSize: '2rem', color: 'var(--brand-green)' }}>Your loan is live!</h2>
                     <p style={{ color: 'var(--muted)', fontSize: '1.1rem', marginBottom: '2rem' }}>
                         The smart contract has been successfully deployed and initialized on the Algorand blockchain.

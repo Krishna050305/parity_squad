@@ -95,6 +95,39 @@ app.add_middleware(
 
 # ── Legacy users_state (kept for backward compatibility with /verify) ──
 users_state: dict = {}
+demo_loans_store: dict = {}
+
+from .demo_seed_data import DEMO_BORROWERS, DEMO_VOUCHERS
+
+@app.on_event("startup")
+async def seed_demo_data():
+    """Load demo users and borrower profiles on startup."""
+    for borrower in DEMO_BORROWERS:
+        if borrower["id"] not in demo_loans_store:
+            demo_loans_store[borrower["id"]] = borrower
+    
+    for voucher in DEMO_VOUCHERS:
+        if voucher["wallet"] not in users_state:
+            users_state[voucher["wallet"]] = {
+                "email": True, "phone": True, "pan": f"demo_pan_{voucher['name'][:4].lower()}",
+                "tier": 2, "trust_score": voucher["trust_score"], "risk_score": 100 - voucher["trust_score"],
+                "is_voucher": True, "is_guarantor": voucher["name"] in ["Ravi Kumar", "Venkat Rao"]
+            }
+
+@app.get("/demo/borrowers")
+def get_demo_borrowers(category: str | None = None, min_trust: int | None = None):
+    result = list(demo_loans_store.values())
+    if category:
+        result = [b for b in result if b["category"] == category]
+    if min_trust:
+        result = [b for b in result if b["trust_score"] >= min_trust]
+    return {"borrowers": result}
+
+@app.get("/demo/borrowers/{profile_id}")
+def get_demo_borrower(profile_id: str):
+    if profile_id not in demo_loans_store:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    return demo_loans_store[profile_id]
 
 
 # ══════════════════════════════════════════════════════════════════

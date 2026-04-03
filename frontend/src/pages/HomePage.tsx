@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { connectWallet } from '../wallet';
 import {
   categories, borrowerProfiles, testimonials,
-  getInitials, getAvatarColor, getTrustColor, formatCurrency,
+  getInitials, getAvatarColor, getTrustColor, formatCurrency, getRiskColor,
   type Category, type BorrowerProfile,
 } from '../data';
 
@@ -34,7 +35,11 @@ const Particles = () => {
 };
 
 /* ── Borrower Card ────────────────────────────────────────────── */
-const BorrowerCard = ({ profile }: { profile: BorrowerProfile }) => {
+interface BorrowerCardProps {
+  profile: BorrowerProfile;
+  onLendClick?: (profile: BorrowerProfile) => void;
+}
+const BorrowerCard = ({ profile, onLendClick }: BorrowerCardProps) => {
   const trustColor = getTrustColor(profile.trustScore);
   const trustClass = profile.trustScore >= 80 ? 'trust-badge--high' : profile.trustScore >= 60 ? 'trust-badge--mid' : 'trust-badge--low';
 
@@ -67,9 +72,123 @@ const BorrowerCard = ({ profile }: { profile: BorrowerProfile }) => {
         <span className="borrower-card__lenders">
           {profile.lenderCount} lender{profile.lenderCount !== 1 ? 's' : ''} contributed
         </span>
-        <Link to={`/loan/${profile.id}`} style={{ textDecoration: 'none' }}>
-          <button className="btn btn-primary btn-sm">Lend Now →</button>
-        </Link>
+        {onLendClick ? (
+          <button className="btn btn-primary btn-sm" onClick={() => onLendClick(profile)}>Lend Now →</button>
+        ) : (
+          <Link to={`/loan/${profile.id}`} style={{ textDecoration: 'none' }}>
+            <button className="btn btn-primary btn-sm">Lend Now →</button>
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ── Lend Now Modal ───────────────────────────────────────────── */
+const LendNowModal = ({ 
+  profile, 
+  onClose, 
+  onProceed 
+}: { 
+  profile: BorrowerProfile; 
+  onClose: () => void;
+  onProceed: (amount: number) => void;
+}) => {
+  const [amount, setAmount] = useState<number>(0);
+  const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const neededAmount = Math.max(0, profile.amount - (profile.amount * profile.fundedPct / 100));
+  
+  // Tier limits mock (Tier 0 -> Tier 4 roughly)
+  const maxLimit = Math.min(neededAmount, profile.trustScore >= 80 ? 50000 : 5000); 
+
+  const isValid = amount > 0 && amount <= maxLimit;
+
+  const handleNext = async () => {
+    if (!isValid) return;
+    try {
+      setConnecting(true);
+      setError(null);
+      await connectWallet();
+      onProceed(amount);
+    } catch (err: any) {
+      setError(err?.message || 'Wallet connection failed');
+      setConnecting(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(0,0,0,0.5)', zIndex: 1000,
+      display: 'flex', alignItems: 'center', justifyContent: 'center'
+    }}>
+      <div className="card card-elevated" style={{ width: '90%', maxWidth: '500px', position: 'relative' }}>
+        <button onClick={onClose} style={{
+          position: 'absolute', top: '16px', right: '16px', background: 'transparent',
+          border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--lp-slate-muted)'
+        }}>&times;</button>
+        
+        <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--lp-green)', marginBottom: 'var(--space-md)' }}>Fund a Dream</h2>
+        
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+          <div className="avatar avatar-md" style={{ background: getAvatarColor(profile.name) }}>
+            {getInitials(profile.name)}
+          </div>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{profile.name}</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--lp-slate-muted)' }}>{profile.reason}</div>
+          </div>
+        </div>
+
+        <div style={{ background: 'var(--lp-surface-raised)', padding: '12px', borderRadius: 'var(--radius-sm)', marginBottom: 'var(--space-md)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--lp-slate-muted)' }}>Requested</span>
+            <strong style={{ color: 'var(--lp-slate)' }}>{formatCurrency(profile.amount)}</strong>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--lp-slate-muted)' }}>Remaining Needed</span>
+            <strong style={{ color: 'var(--lp-green)' }}>{formatCurrency(neededAmount)}</strong>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--lp-slate-muted)' }}>Risk Tier</span>
+            <span className={`trust-badge ${profile.trustScore >= 80 ? 'trust-badge--high' : 'trust-badge--mid'}`}>
+              Trust: {profile.trustScore}
+            </span>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 'var(--space-lg)' }}>
+          <label className="form-label">Amount to Lend (ALGO)</label>
+          <input 
+            type="number" 
+            className="form-input" 
+            placeholder={`Max ${maxLimit} ALGO`}
+            value={amount || ''}
+            onChange={(e) => setAmount(Number(e.target.value))}
+          />
+          {amount > maxLimit && (
+            <div style={{ color: 'var(--lp-danger)', fontSize: '0.8rem', marginTop: '4px' }}>
+              Amount exceeds limit ({maxLimit} ALGO max)
+            </div>
+          )}
+        </div>
+
+        {error && (
+          <div style={{ color: 'var(--lp-danger)', fontSize: '0.85rem', marginBottom: '12px' }}>
+            {error}
+          </div>
+        )}
+
+        <button 
+          className="btn btn-primary" 
+          style={{ width: '100%' }} 
+          disabled={!isValid || connecting}
+          onClick={handleNext}
+        >
+          {connecting ? 'Connecting Pera Wallet...' : 'Next →'}
+        </button>
       </div>
     </div>
   );
@@ -78,6 +197,8 @@ const BorrowerCard = ({ profile }: { profile: BorrowerProfile }) => {
 /* ── Landing Page ─────────────────────────────────────────────── */
 export const HomePage = () => {
   const [activeCategory, setActiveCategory] = useState<Category>('agriculture');
+  const [activeLendProfile, setActiveLendProfile] = useState<BorrowerProfile | null>(null);
+  const navigate = useNavigate();
 
   const filteredProfiles = borrowerProfiles.filter(p => p.category === activeCategory);
 
@@ -152,7 +273,11 @@ export const HomePage = () => {
             gap: 'var(--space-xl)',
           }}>
             {filteredProfiles.map(profile => (
-              <BorrowerCard key={profile.id} profile={profile} />
+              <BorrowerCard 
+                key={profile.id} 
+                profile={profile} 
+                onLendClick={(p) => setActiveLendProfile(p)}
+              />
             ))}
           </div>
         </div>
@@ -248,6 +373,17 @@ export const HomePage = () => {
           <p style={{ marginTop: '12px', opacity: 0.6 }}>© 2025 Parity Squad. All rights reserved.</p>
         </div>
       </footer>
+
+      {activeLendProfile && (
+        <LendNowModal 
+          profile={activeLendProfile} 
+          onClose={() => setActiveLendProfile(null)}
+          onProceed={(amount) => {
+            setActiveLendProfile(null);
+            navigate(`/loan/${activeLendProfile.id}`, { state: { prefillAmount: amount } });
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -10,11 +10,14 @@ import { LoanDetailPage } from './pages/LoanDetailPage';
 import { CreateLoanPage } from './pages/CreateLoanPage';
 import './styles/App.css';
 
+import { BackToHome } from './components/BackToHome';
+
 export default function App() {
   return (
     <BrowserRouter>
       <div style={{ minHeight: '100vh' }}>
         <Navbar />
+        <BackToHome />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/auth" element={<AuthPage />} />

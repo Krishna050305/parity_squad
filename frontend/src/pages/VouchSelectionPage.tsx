@@ -63,7 +63,7 @@ export const VouchSelectionPage = () => {
                         background: 'var(--lp-green)', color: 'white',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '0.7rem', border: '2px solid white',
-                      }}>✓</div>
+                      }}>OK</div>
                     )}
                   </div>
                   <div style={{ flex: 1 }}>
@@ -71,7 +71,7 @@ export const VouchSelectionPage = () => {
                     <div style={{ fontSize: '0.82rem', color: 'var(--lp-slate-muted)' }}>{v.city}</div>
                   </div>
                   <span className={`trust-badge ${trustClass}`}>
-                    <span style={{ fontSize: '0.65rem' }}>⬣</span> {v.trustScore}
+                    <span style={{ fontSize: '0.65rem' }}>*</span> {v.trustScore}
                   </span>
                 </div>
 

@@ -27,7 +27,6 @@ export const GuarantorNotification: React.FC<GuarantorNotificationProps> = ({
   return (
     <div className="guarantor-notif">
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
-        <span style={{ fontSize: '1.5rem' }}>🔔</span>
         <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--lp-gold-dark)', margin: 0, fontSize: '1.2rem' }}>
           Guarantor Request
         </h3>
@@ -81,10 +80,10 @@ export const GuarantorNotification: React.FC<GuarantorNotificationProps> = ({
       {/* Action Buttons */}
       <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
         <button className="btn btn-primary" style={{ flex: 1 }} onClick={onApprove}>
-          Approve as Guarantor ✓
+          Approve as Guarantor
         </button>
         <button className="btn btn-outline" style={{ flex: 1, borderColor: 'var(--lp-danger)', color: 'var(--lp-danger)' }} onClick={onDecline}>
-          Decline ✗
+          Decline
         </button>
       </div>
     </div>

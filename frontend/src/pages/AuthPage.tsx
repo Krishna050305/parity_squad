@@ -1,53 +1,78 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { connectWallet, getConnectedAddress, signAndSendTxns } from '../wallet';
+import { createLoan } from '../api';
+import { TxBadge } from '../components/TxBadge';
 
-/* ── AuthPage — /auth?role=lender|borrower ────────────────────── */
+const TIERS = [
+  { level: 0, title: 'Tier 0: Basic', req: 'Wallet Pre-Validation', limit: 500, icon: '[W]' },
+  { level: 1, title: 'Tier 1: Verified Email', req: 'Email OTP', limit: 2000, icon: '[@]' },
+  { level: 2, title: 'Tier 2: Verified Phone', req: 'Mobile OTP', limit: 5000, icon: '[#]' },
+  { level: 3, title: 'Tier 3: Identity', req: 'Gov ID (Aadhaar/PAN)', limit: 20000, icon: '[ID]' },
+  { level: 4, title: 'Tier 4: Trusted', req: '2+ Members Vouch', limit: 50000, icon: '[+]' },
+];
+
 export const AuthPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const initialRole = searchParams.get('role') === 'borrower' ? 'borrower' : 'lender';
   const [role, setRole] = useState<'lender' | 'borrower'>(initialRole);
 
-  // Lender state
+  // ---------- LENDER STATE ----------
   const [lenderName, setLenderName] = useState('');
   const [lenderPhone, setLenderPhone] = useState('');
   const [lenderOtp, setLenderOtp] = useState('');
   const [lenderOtpSent, setLenderOtpSent] = useState(false);
 
-  // Borrower state
+  // ---------- BORROWER STATE ----------
   const [borrowerMode, setBorrowerMode] = useState<'returning' | 'new'>('new');
   const [returnId, setReturnId] = useState('');
   const [returnPwd, setReturnPwd] = useState('');
 
-  // New-borrower wizard
-  const [step, setStep] = useState(1);
+  // ---------- MASTER FLOW (NEW BORROWER) ----------
+  const [masterStep, setMasterStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+
+  // Step 1: Tier Selection
+  const [targetTier, setTargetTier] = useState<number | null>(null);
+  const [onboardingStep, setOnboardingStep] = useState<number>(0);
+  const [verifiedTier, setVerifiedTier] = useState<number>(-1);
+  const [processing, setProcessing] = useState(false);
+
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [aadhaar, setAadhaar] = useState('');
   const [pan, setPan] = useState('');
-  const [kycOtp, setKycOtp] = useState('');
-  const [kycOtpSent, setKycOtpSent] = useState(false);
-  const [verifiedTier, setVerifiedTier] = useState<number | null>(null);
-  const [trustPath, setTrustPath] = useState<'vouch' | 'guarantor' | 'solo' | null>(null);
-  const [guarantorAddr, setGuarantorAddr] = useState('');
-  const [guarantorPending, setGuarantorPending] = useState(false);
 
-  // Loan params
-  const [loanAmount, setLoanAmount] = useState(10000);
-  const [tenure, setTenure] = useState(6);
-  const [frequency, setFrequency] = useState<'weekly' | 'biweekly' | 'monthly'>('monthly');
+  // Step 2: Path
+  type LoanPath = 'A' | 'B' | 'C' | null;
+  const [selectedPath, setSelectedPath] = useState<LoanPath>(null);
 
-  const tierLimits: Record<number, number> = { 0: 41500, 1: 83000, 2: 415000, 3: 830000 };
-  const currentTier = verifiedTier ?? 0;
-  const maxAmount = tierLimits[currentTier] || 41500;
+  // Step 3: Form
+  const [loanAmount, setLoanAmount] = useState<number | ''>('');
+  const [duration, setDuration] = useState('30');
+  
+  // Specific Form Details
+  const [pathAName, setPathAName] = useState('');
+  const [pathAPurpose, setPathAPurpose] = useState('');
+  const [pathBName, setPathBName] = useState('');
+  const [pathBType, setPathBType] = useState('');
+  const [pathBRevenue, setPathBRevenue] = useState('');
+  const [pathCCommunity, setPathCCommunity] = useState('');
+  const [pathCVoucher1, setPathCVoucher1] = useState('');
+  const [pathCVoucher2, setPathCVoucher2] = useState('');
 
-  const installmentCount = useMemo(() => {
-    if (frequency === 'weekly') return tenure * 4;
-    if (frequency === 'biweekly') return tenure * 2;
-    return tenure;
-  }, [tenure, frequency]);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const installmentAmount = Math.ceil(loanAmount / installmentCount);
-  const freqLabel = frequency === 'weekly' ? 'week' : frequency === 'biweekly' ? '2 weeks' : 'month';
+  // Step 4 & 5: Wallet & Submit
+  const [walletAddress, setWalletAddress] = useState<string | null>(getConnectedAddress());
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const [submittingLoan, setSubmittingLoan] = useState(false);
+  const [successTxId, setSuccessTxId] = useState<string | null>(null);
 
+  // Helper
+  const activeLimit = targetTier !== null ? TIERS[targetTier].limit : 500;
+
+  // LENDER / RETURNING BORROWER HANDLERS
   const handleLenderLogin = () => {
     if (!lenderName || !lenderOtp) return;
     localStorage.setItem('lp_role', 'lender');
@@ -62,68 +87,157 @@ export const AuthPage = () => {
     navigate('/borrower/dashboard');
   };
 
-  const handleVerifyKyc = () => {
-    // Mock verification
-    let tier = 0;
-    if (pan && pan.match(/^[A-Z]{5}[0-9]{4}[A-Z]$/)) tier = 3;
-    else if (aadhaar && aadhaar.length === 12) tier = 2;
-    else tier = 1;
-    setVerifiedTier(tier);
-    // Auto-advance after a brief moment
-    setTimeout(() => setStep(2), 800);
+  // STEP 1 HANDLERS
+  const handleSelectTier = (tierIndex: number) => {
+    setTargetTier(tierIndex);
+    setOnboardingStep(0);
+    setVerifiedTier(-1);
   };
 
-  const handleTrustPathSelect = (path: 'vouch' | 'guarantor' | 'solo') => {
-    setTrustPath(path);
-    if (path === 'vouch') {
-      navigate('/vouch-selection');
+  const handleNextTierStep = async () => {
+    setProcessing(true);
+    try {
+      if (onboardingStep === 0) {
+        await new Promise(r => setTimeout(r, 800)); // Simulating
+        setVerifiedTier(0);
+      } else if (onboardingStep === 1) {
+        if (!email.includes('@')) throw new Error('Invalid email');
+        await new Promise(r => setTimeout(r, 1000)); 
+        setVerifiedTier(1);
+      } else if (onboardingStep === 2) {
+        if (phone.length < 10) throw new Error('Invalid phone');
+        await new Promise(r => setTimeout(r, 1000));
+        setVerifiedTier(2);
+      } else if (onboardingStep === 3) {
+        if (aadhaar.length < 12 && pan.length < 10) throw new Error('Provide Gov ID');
+        await new Promise(r => setTimeout(r, 1200));
+        setVerifiedTier(3);
+      } else if (onboardingStep === 4) {
+        await new Promise(r => setTimeout(r, 1500));
+        setVerifiedTier(4);
+      }
+
+      setProcessing(false);
+      if (targetTier !== null && onboardingStep < targetTier) {
+        setOnboardingStep(prev => prev + 1);
+      }
+    } catch (err) {
+      console.error(err);
+      setProcessing(false);
+      alert('Verification failed. Check inputs.');
+    }
+  };
+
+  // STEP 3 HANDLER
+  const handlePathSubmit = () => {
+    setFormError(null);
+    if (!loanAmount || typeof loanAmount !== 'number' || loanAmount <= 0) {
+      setFormError("Please enter a valid loan amount.");
       return;
     }
-    if (path === 'solo') {
-      setStep(3);
+    if (loanAmount > activeLimit) {
+      setFormError(`Amount exceeds your Tier limit of ${activeLimit} ALGO. Reduce amount or go back to upgrade tier.`);
       return;
     }
-    // guarantor — show input
+    setMasterStep(4);
   };
 
-  const handleGuarantorRequest = () => {
-    if (!guarantorAddr) return;
-    setGuarantorPending(true);
-    // Mock pending state
-    setTimeout(() => setStep(3), 1500);
+  // STEP 4 HANDLER
+  const handlePerformWalletConnect = async () => {
+    setWalletError(null);
+    setProcessing(true);
+    try {
+        const addr = await connectWallet();
+        await new Promise(r => setTimeout(r, 1200)); // Simulating on-chain ASA check
+        setWalletAddress(addr);
+        setMasterStep(5);
+    } catch (err: any) {
+        setWalletError(err.message || 'Verification failed. Could not find corresponding ASA badge in wallet.');
+    } finally {
+        setProcessing(false);
+    }
   };
 
-  const handleLoanConfirm = () => {
-    localStorage.setItem('lp_role', 'borrower');
-    localStorage.setItem('lp_user', JSON.stringify({
-      name: 'New Borrower',
-      tier: currentTier,
-      trustPath,
-      loan: { amount: loanAmount, tenure, frequency, installmentCount, installmentAmount }
-    }));
-    navigate('/borrower/dashboard');
+  // STEP 5 HANDLER
+  const handleFinalSubmit = async () => {
+      if (!walletAddress) {
+          setWalletError("No wallet connected.");
+          return;
+      }
+      setSubmittingLoan(true);
+      try {
+          const goalMicroAlgos = Number(loanAmount) * 1_000_000;
+          const durationDays = parseInt(duration);
+          
+          let purposeText = "";
+          if (selectedPath === 'A') purposeText = `Vouch: ${pathAPurpose}`;
+          if (selectedPath === 'B') purposeText = `Guarantor: ${pathAPurpose}`;
+          if (selectedPath === 'C') purposeText = `Self-raise: ${pathAPurpose}`;
+
+          const { txns } = await createLoan({
+              borrower_address: walletAddress,
+              goal_microalgos: goalMicroAlgos,
+              duration_days: durationDays,
+              tier_required: targetTier || 0
+          });
+
+          const txId = await signAndSendTxns(txns);
+          setSuccessTxId(txId);
+
+          // Note: Standard flow usually navigates, but user explicitly asked to show txId. 
+      } catch(err: any) {
+          console.error(err);
+          setWalletError(err.message || "Failed to deploy smart contract.");
+      } finally {
+          setSubmittingLoan(false);
+      }
   };
+
+
+  // ------------------------------------------------------------------------------------------------------------------
+  // RENDER HELPERS
+  // ------------------------------------------------------------------------------------------------------------------
+
+  if (successTxId) {
+    return (
+        <div style={{ padding: '6rem 2rem', textAlign: 'center', backgroundColor: '#fafaf9', minHeight: 'calc(100vh - 80px)' }}>
+            <div style={{ maxWidth: '600px', margin: '0 auto', background: 'white', padding: '4rem 2rem', border: '1px solid #eee', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                <h2 style={{ fontSize: '2rem', color: 'var(--lp-green)', marginBottom: '1rem' }}>Loan Request Submitted!</h2>
+                <p style={{ color: 'var(--lp-slate-muted)', fontSize: '1.1rem', marginBottom: '2rem' }}>
+                    The loan contract is live and broadcasting to the P2P network.
+                </p>
+                <div style={{ marginBottom: '2rem' }}>
+                    <TxBadge txId={successTxId} />
+                </div>
+                <button className="btn btn-primary" onClick={() => navigate('/borrower/dashboard')}>Go to Dashboard</button>
+            </div>
+        </div>
+    );
+  }
 
   return (
-    <div style={{ minHeight: 'calc(100vh - 68px)', background: 'var(--lp-ivory)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-xl)' }}>
-      <div style={{ width: '100%', maxWidth: '520px' }}>
-        {/* Role Toggle */}
-        <div style={{ textAlign: 'center', marginBottom: 'var(--space-2xl)' }}>
-          <div className="role-toggle">
-            <button
-              className={`role-toggle__btn ${role === 'lender' ? 'role-toggle__btn--active' : ''}`}
-              onClick={() => setRole('lender')}
-            >
-               Lender
-            </button>
-            <button
-              className={`role-toggle__btn ${role === 'borrower' ? 'role-toggle__btn--active' : ''}`}
-              onClick={() => setRole('borrower')}
-            >
-               Borrower
-            </button>
-          </div>
-        </div>
+    <div style={{ minHeight: 'calc(100vh - 68px)', background: 'var(--lp-ivory)', padding: 'var(--space-2xl) var(--space-md)' }}>
+      <div style={{ maxWidth: '640px', margin: '0 auto' }}>
+        
+        {/* Role Toggle (Only show if new borrower haven't started tier flow) */}
+        {!(borrowerMode === 'new' && targetTier !== null && role === 'borrower') && (
+            <div style={{ textAlign: 'center', marginBottom: 'var(--space-2xl)' }}>
+            <div className="role-toggle">
+                <button
+                className={`role-toggle__btn ${role === 'lender' ? 'role-toggle__btn--active' : ''}`}
+                onClick={() => setRole('lender')}
+                >
+                Lender
+                </button>
+                <button
+                className={`role-toggle__btn ${role === 'borrower' ? 'role-toggle__btn--active' : ''}`}
+                onClick={() => setRole('borrower')}
+                >
+                Borrower
+                </button>
+            </div>
+            </div>
+        )}
 
         {/* ═══ Lender Auth ═══ */}
         {role === 'lender' && (
@@ -134,10 +248,6 @@ export const AuthPage = () => {
             <p style={{ color: 'var(--lp-slate-muted)', fontSize: '0.9rem', marginBottom: 'var(--space-xl)' }}>
               Start funding borrowers and building community trust.
             </p>
-            <p style={{ fontSize: '0.78rem', color: 'var(--lp-slate-muted)', fontStyle: 'italic', marginBottom: 'var(--space-lg)', background: 'rgba(13,79,60,0.04)', padding: '8px 12px', borderRadius: 'var(--radius-sm)' }}>
-               Lenders do not need Aadhaar/PAN verification.
-            </p>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
               <div>
                 <label className="form-label">Full Name</label>
@@ -148,7 +258,7 @@ export const AuthPage = () => {
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <input className="form-input" placeholder="10-digit mobile" value={lenderPhone} onChange={e => setLenderPhone(e.target.value)} style={{ flex: 1 }} />
                   <button className="btn btn-outline btn-sm" onClick={() => setLenderOtpSent(true)} disabled={!lenderPhone || lenderPhone.length < 10}>
-                    {lenderOtpSent ? '✓ Sent' : 'Send OTP'}
+                    {lenderOtpSent ? 'Sent' : 'Send OTP'}
                   </button>
                 </div>
               </div>
@@ -158,7 +268,7 @@ export const AuthPage = () => {
                   <input className="form-input" placeholder="Enter 4-digit OTP" value={lenderOtp} onChange={e => setLenderOtp(e.target.value)} maxLength={4} />
                 </div>
               )}
-              <button className="btn btn-primary btn-lg" style={{ marginTop: 'var(--space-md)', width: '100%' }} onClick={handleLenderLogin} disabled={!lenderName || !lenderOtp}>
+              <button className="btn btn-primary btn-lg" style={{ marginTop: 'var(--space-md)' }} onClick={handleLenderLogin} disabled={!lenderName || !lenderOtp}>
                 Login as Lender →
               </button>
             </div>
@@ -168,243 +278,217 @@ export const AuthPage = () => {
         {/* ═══ Borrower Auth ═══ */}
         {role === 'borrower' && (
           <div className="card card-elevated" style={{ padding: 'var(--space-2xl)' }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--lp-green)', marginBottom: '4px', fontSize: '1.6rem' }}>
-              Borrower Portal
-            </h2>
-            <p style={{ color: 'var(--lp-slate-muted)', fontSize: '0.9rem', marginBottom: 'var(--space-lg)' }}>
-              Access your loans or start a new application.
-            </p>
-
-            {/* Sub-toggle */}
-            <div style={{ display: 'flex', marginBottom: 'var(--space-xl)', gap: '4px', background: 'var(--lp-border-light)', borderRadius: 'var(--radius-full)', padding: '3px' }}>
-              <button
-                onClick={() => setBorrowerMode('returning')}
-                style={{
-                  flex: 1, border: 'none', padding: '8px', borderRadius: 'var(--radius-full)', cursor: 'pointer',
-                  fontWeight: 600, fontSize: '0.85rem', fontFamily: 'var(--font-body)',
-                  background: borrowerMode === 'returning' ? 'var(--lp-gold)' : 'transparent',
-                  color: borrowerMode === 'returning' ? 'white' : 'var(--lp-slate-muted)',
-                  transition: 'all 0.2s',
-                }}
-              >
-                Returning Borrower
-              </button>
-              <button
-                onClick={() => setBorrowerMode('new')}
-                style={{
-                  flex: 1, border: 'none', padding: '8px', borderRadius: 'var(--radius-full)', cursor: 'pointer',
-                  fontWeight: 600, fontSize: '0.85rem', fontFamily: 'var(--font-body)',
-                  background: borrowerMode === 'new' ? 'var(--lp-gold)' : 'transparent',
-                  color: borrowerMode === 'new' ? 'white' : 'var(--lp-slate-muted)',
-                  transition: 'all 0.2s',
-                }}
-              >
-                New Borrower
-              </button>
-            </div>
+            
+            {/* Header logic */}
+            {targetTier === null ? (
+                <>
+                <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--lp-green)', marginBottom: '4px', fontSize: '1.6rem' }}>
+                    Borrower Portal
+                </h2>
+                <p style={{ color: 'var(--lp-slate-muted)', fontSize: '0.9rem', marginBottom: 'var(--space-lg)' }}>
+                    Access your loans or start a new application.
+                </p>
+                <div style={{ display: 'flex', marginBottom: 'var(--space-xl)', gap: '4px', background: 'var(--lp-border-light)', borderRadius: 'var(--radius-full)', padding: '3px' }}>
+                    <button
+                        onClick={() => setBorrowerMode('returning')}
+                        style={{ flex: 1, border: 'none', padding: '8px', borderRadius: 'var(--radius-full)', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', background: borrowerMode === 'returning' ? 'var(--lp-gold)' : 'transparent', color: borrowerMode === 'returning' ? 'white' : 'var(--lp-slate-muted)' }}
+                    >Returning</button>
+                    <button
+                        onClick={() => setBorrowerMode('new')}
+                        style={{ flex: 1, border: 'none', padding: '8px', borderRadius: 'var(--radius-full)', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', background: borrowerMode === 'new' ? 'var(--lp-gold)' : 'transparent', color: borrowerMode === 'new' ? 'white' : 'var(--lp-slate-muted)' }}
+                    >New Borrower</button>
+                </div>
+                </>
+            ) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--lp-border-light)' }}>
+                    <h2 style={{ fontSize: '1.2rem', color: 'var(--lp-slate)', margin: 0 }}>Onboarding</h2>
+                    <div style={{ background: 'var(--lp-green)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 600 }}>
+                        Borrow Limit: {activeLimit.toLocaleString()} ALGO
+                    </div>
+                </div>
+            )}
 
             {/* Returning Borrower */}
             {borrowerMode === 'returning' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-                <div>
-                  <label className="form-label">User ID (Wallet Address Prefix)</label>
-                  <input className="form-input" placeholder="e.g. RAVI...K4X2" value={returnId} onChange={e => setReturnId(e.target.value)} />
-                </div>
-                <div>
-                  <label className="form-label">Password</label>
-                  <input className="form-input" type="password" placeholder="Enter password" value={returnPwd} onChange={e => setReturnPwd(e.target.value)} />
-                </div>
-                <a href="#" style={{ fontSize: '0.82rem', color: 'var(--lp-gold)', fontWeight: 500 }}>Forgot password?</a>
-                <button className="btn btn-primary btn-lg" style={{ width: '100%' }} onClick={handleReturningBorrower} disabled={!returnId || !returnPwd}>
-                  Login →
-                </button>
+                <div><label className="form-label">User ID (Wallet Address)</label><input className="form-input" value={returnId} onChange={e => setReturnId(e.target.value)} /></div>
+                <div><label className="form-label">Password</label><input className="form-input" type="password" value={returnPwd} onChange={e => setReturnPwd(e.target.value)} /></div>
+                <button className="btn btn-primary btn-lg" onClick={handleReturningBorrower} disabled={!returnId || !returnPwd}>Login →</button>
               </div>
             )}
 
-            {/* New Borrower Wizard */}
+            {/* New Borrower Flow */}
             {borrowerMode === 'new' && (
-              <>
-                {/* Step Indicator */}
-                <div className="steps">
-                  <div className={`step-dot ${step >= 1 ? (step === 1 ? 'step-dot--active' : 'step-dot--done') : ''}`} />
-                  <div className={`step-dot ${step >= 2 ? (step === 2 ? 'step-dot--active' : 'step-dot--done') : ''}`} />
-                  <div className={`step-dot ${step >= 3 ? (step === 3 ? 'step-dot--active' : 'step-dot--done') : ''}`} />
-                </div>
+                <>
 
-                {/* Step 1: Identity Verification */}
-                {step === 1 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-                    <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--lp-slate)', fontSize: '1.2rem', marginBottom: '4px' }}>
-                      Step 1 — Identity Verification
-                    </h3>
-                    <div>
-                      <label className="form-label">Aadhaar Number</label>
-                      <input className="form-input" placeholder="1234 5678 9012" value={aadhaar}
-                        onChange={e => setAadhaar(e.target.value.replace(/\D/g, '').slice(0, 12))}
-                        maxLength={12}
-                        style={{ letterSpacing: '1px' }}
-                      />
-                      <span style={{ fontSize: '0.75rem', color: 'var(--lp-slate-muted)' }}>12 digits, masked for privacy</span>
-                    </div>
-                    <div>
-                      <label className="form-label">PAN Number</label>
-                      <input className="form-input" placeholder="ABCDE1234F"
-                        value={pan}
-                        onChange={e => setPan(e.target.value.toUpperCase().slice(0, 10))}
-                        maxLength={10}
-                        style={{ textTransform: 'uppercase', letterSpacing: '1px' }}
-                      />
-                      <span style={{ fontSize: '0.75rem', color: 'var(--lp-slate-muted)' }}>Format: XXXXX0000X</span>
-                    </div>
-
-                    {!kycOtpSent ? (
-                      <button className="btn btn-gold" style={{ width: '100%' }} onClick={() => setKycOtpSent(true)} disabled={!aadhaar || aadhaar.length < 12}>
-                        Verify with OTP
-                      </button>
-                    ) : (
-                      <>
-                        <div>
-                          <label className="form-label">Enter OTP</label>
-                          <input className="form-input" placeholder="1234" value={kycOtp} onChange={e => setKycOtp(e.target.value)} maxLength={4} />
+                {/* MASTER STEP 1: Tier Selection */}
+                {masterStep === 1 && targetTier === null && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                        <h3 style={{ fontSize: '1.2rem', color: 'var(--lp-slate)', marginBottom: '8px' }}>Step 1: Select Target Tier</h3>
+                        {TIERS.map((t) => (
+                        <div key={t.level} className="card" style={{ padding: '12px', cursor: 'pointer', border: '1px solid var(--lp-border-light)' }} onClick={() => handleSelectTier(t.level)}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--lp-green)' }}>{t.icon}</div>
+                            <div style={{ flex: 1 }}><div style={{ fontWeight: 600, color: 'var(--lp-slate)' }}>{t.title}</div><div style={{ fontSize: '0.8rem', color: 'var(--lp-slate-muted)' }}>Req: {t.req}</div></div>
+                            <div style={{ fontSize: '0.9rem', color: 'var(--lp-green)', fontWeight: 600 }}>{t.limit.toLocaleString()} ALGO</div>
+                            </div>
                         </div>
-                        <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleVerifyKyc} disabled={kycOtp.length < 4}>
-                          Verify & Continue →
+                        ))}
+                    </div>
+                )}
+
+                {masterStep === 1 && targetTier !== null && (
+                    <div>
+                        <div className="steps" style={{ marginBottom: 'var(--space-lg)' }}>
+                            {Array.from({ length: targetTier + 1 }).map((_, i) => (
+                                <div key={i} className={`step-dot ${onboardingStep >= i ? (onboardingStep === i ? 'step-dot--active' : 'step-dot--done') : ''}`} />
+                            ))}
+                        </div>
+
+                        {onboardingStep === targetTier && verifiedTier === targetTier ? (
+                            <div style={{ textAlign: 'center', padding: 'var(--space-xl) 0' }}>
+                                <h3 style={{ color: 'var(--lp-green)', marginBottom: '8px' }}>Tier {targetTier} ASA Minted!</h3>
+                                <p style={{ color: 'var(--lp-slate-muted)' }}>You successfully proved your identity for Tier {targetTier}.</p>
+                                <button className="btn btn-primary btn-lg" style={{ marginTop: '24px', width: '100%' }} onClick={() => setMasterStep(2)}>
+                                    Continue to Loan Path →
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                <div style={{ background: 'var(--lp-surface-raised)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-md)' }}>
+                                    <h4 style={{ color: 'var(--lp-slate)', marginBottom: '12px' }}>Step 1.{onboardingStep}: {TIERS[onboardingStep].req}</h4>
+                                    {onboardingStep === 0 && <p style={{ fontSize: '0.9rem', color: 'var(--lp-slate-light)' }}>Simulated setup sequence for wallet identification.</p>}
+                                    {onboardingStep === 1 && <input className="form-input" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} />}
+                                    {onboardingStep === 2 && <input className="form-input" placeholder="10-digit mobile" value={phone} onChange={e => setPhone(e.target.value)} />}
+                                    {onboardingStep === 3 && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            <input className="form-input" placeholder="Aadhaar Array (12 digits)" value={aadhaar} onChange={e => setAadhaar(e.target.value)} />
+                                            <input className="form-input" placeholder="PAN Number" value={pan} onChange={e => setPan(e.target.value)} />
+                                        </div>
+                                    )}
+                                    {onboardingStep === 4 && <p style={{ fontSize: '0.9rem', color: 'var(--lp-slate-light)' }}>Requesting multsig vouch approval from 2 verified members. (Simulation)</p>}
+                                </div>
+                                <button className="btn btn-gold" style={{ width: '100%' }} onClick={handleNextTierStep} disabled={processing}>
+                                    {processing ? 'Processing...' : `Complete Verification`}
+                                </button>
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {/* MASTER STEP 2: Choose Path */}
+                {masterStep === 2 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                        <h3 style={{ fontSize: '1.2rem', color: 'var(--lp-slate)', marginBottom: '16px' }}>Step 2: Choose Your Path</h3>
+                        
+                        <div className="card" style={{ padding: '16px', border: selectedPath === 'A' ? '2px solid var(--lp-green)' : '1px solid var(--lp-border-light)', cursor: 'pointer' }} onClick={() => setSelectedPath('A')}>
+                            <div style={{ fontWeight: 700, color: 'var(--lp-slate)' }}>Path A: Vouch</div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--lp-slate-muted)' }}>Get 2 community members to vouch for you.</div>
+                        </div>
+
+                        <div className="card" style={{ padding: '16px', border: selectedPath === 'B' ? '2px solid var(--lp-green)' : '1px solid var(--lp-border-light)', cursor: 'pointer' }} onClick={() => setSelectedPath('B')}>
+                            <div style={{ fontWeight: 700, color: 'var(--lp-slate)' }}>Path B: Guarantor</div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--lp-slate-muted)' }}>Nominate a trusted member to guarantee your loans.</div>
+                        </div>
+
+                        <div className="card" style={{ padding: '16px', border: selectedPath === 'C' ? '2px solid var(--lp-green)' : '1px solid var(--lp-border-light)', cursor: 'pointer', marginBottom: '16px' }} onClick={() => setSelectedPath('C')}>
+                            <div style={{ fontWeight: 700, color: 'var(--lp-slate)' }}>Path C: Self-raise</div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--lp-slate-muted)' }}>Borrow within your Tier limit, no vouch needed.</div>
+                        </div>
+
+                        <button className="btn btn-primary" disabled={!selectedPath} onClick={() => setMasterStep(3)}>Next Step →</button>
+                    </div>
+                )}
+
+                {/* MASTER STEP 3: Form */}
+                {masterStep === 3 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+                        <h3 style={{ fontSize: '1.2rem', color: 'var(--lp-slate)', marginBottom: '8px' }}>Step 3: Loan Details (Path {selectedPath})</h3>
+                        
+                        {formError && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '12px', borderRadius: '4px', fontSize: '0.85rem' }}>{formError}</div>}
+
+                        <div><label className="form-label">Full Name</label><input className="form-input" value={pathAName} onChange={e => setPathAName(e.target.value)} /></div>
+                        <div><label className="form-label">Loan Purpose</label><input className="form-input" value={pathAPurpose} onChange={e => setPathAPurpose(e.target.value)} /></div>
+                        <div><label className="form-label">Duration (Days)</label><input type="number" className="form-input" value={duration} onChange={e => setDuration(e.target.value)} /></div>
+
+                        {selectedPath === 'A' && (
+                            <>
+                                <div><label className="form-label">Voucher 1 Address</label><input className="form-input" value={pathCVoucher1} onChange={e => setPathCVoucher1(e.target.value)} /></div>
+                                <div><label className="form-label">Voucher 2 Address</label><input className="form-input" value={pathCVoucher2} onChange={e => setPathCVoucher2(e.target.value)} /></div>
+                            </>
+                        )}
+                        {selectedPath === 'B' && (
+                            <>
+                                <div><label className="form-label">Guarantor Address</label><input className="form-input" value={pathCVoucher1} onChange={e => setPathCVoucher1(e.target.value)} /></div>
+                            </>
+                        )}
+                        {selectedPath === 'C' && (
+                            <p style={{ fontSize: '0.9rem', color: 'var(--lp-slate-muted)' }}>No additional vouchers or guarantors required for Self-raise.</p>
+                        )}
+
+                        <div style={{ borderTop: '1px solid var(--lp-border-light)', paddingTop: '16px', marginTop: '8px' }}>
+                            <label className="form-label">Requested Loan Amount (ALGO)</label>
+                            <input type="number" className="form-input" placeholder={`Max ${activeLimit}`} value={loanAmount} onChange={e => setLoanAmount(Number(e.target.value) || '')} />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                            <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setMasterStep(2)}>Back</button>
+                            <button className="btn btn-primary" style={{ flex: 2 }} onClick={handlePathSubmit}>Save & Continue</button>
+                        </div>
+                    </div>
+                )}
+
+                {/* MASTER STEP 4: Wallet Connect */}
+                {masterStep === 4 && (
+                    <div style={{ textAlign: 'center', padding: 'var(--space-xl) 0' }}>
+                        <h3 style={{ fontSize: '1.2rem', color: 'var(--lp-slate)', marginBottom: '16px' }}>Step 4: Connect Wallet</h3>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--lp-slate-muted)', marginBottom: '24px' }}>
+                            Please connect your Pera Wallet SDK to cross-verify the Tier {targetTier} ASA badge before submitting your loan.
+                        </p>
+
+                        {walletError && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '12px', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '16px' }}>{walletError}</div>}
+
+                        <button className="btn btn-gold btn-lg" onClick={handlePerformWalletConnect} disabled={processing}>
+                            {processing ? 'Connecting Pera...' : 'Connect Wallet'}
                         </button>
-                      </>
-                    )}
-
-                    {verifiedTier !== null && (
-                      <div style={{
-                        background: 'rgba(13,79,60,0.06)', padding: '12px 16px', borderRadius: 'var(--radius-md)',
-                        textAlign: 'center', fontWeight: 600, color: 'var(--lp-green)', fontSize: '0.9rem'
-                      }}>
-                        ✅ Tier {verifiedTier} Unlocked — Limit: ₹{tierLimits[verifiedTier]?.toLocaleString('en-IN')}
-                      </div>
-                    )}
-                  </div>
+                    </div>
                 )}
 
-                {/* Step 2: Trust Path Selection */}
-                {step === 2 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-                    <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--lp-slate)', fontSize: '1.2rem', marginBottom: '4px' }}>
-                      Step 2 — Choose Your Trust Path
-                    </h3>
-
-                    {/* Path A — Community Vouch */}
-                    <div className="card" style={{ border: trustPath === 'vouch' ? '2px solid var(--lp-green)' : undefined }}>
-                      <h4 style={{ color: 'var(--lp-green)', marginBottom: '4px', fontFamily: 'var(--font-display)' }}>Path A — Community Vouch</h4>
-                      <p style={{ fontSize: '0.88rem', color: 'var(--lp-slate-light)', marginBottom: '8px', lineHeight: 1.5 }}>
-                        Get 2 existing LendPool members to vouch for you. You pay ₹500 to each voucher. This unlocks community credibility.
-                      </p>
-                      <p style={{ fontSize: '0.82rem', color: 'var(--lp-gold-dark)', fontWeight: 600, marginBottom: '12px' }}>
-                        2 × ₹500 = ₹1,000 total
-                      </p>
-                      <button className="btn btn-outline btn-sm" style={{ width: '100%' }} onClick={() => handleTrustPathSelect('vouch')}>
-                        Browse & Select Vouchers →
-                      </button>
-                    </div>
-
-                    {/* Path B — Guarantor */}
-                    <div className="card" style={{ border: trustPath === 'guarantor' ? '2px solid var(--lp-green)' : undefined }}>
-                      <h4 style={{ color: 'var(--lp-green)', marginBottom: '4px', fontFamily: 'var(--font-display)' }}>Path B — Add Guarantor</h4>
-                      <p style={{ fontSize: '0.88rem', color: 'var(--lp-slate-light)', marginBottom: '8px', lineHeight: 1.5 }}>
-                        Nominate a trusted LendPool member as your guarantor. Their reputation backs your loan. They must approve.
-                      </p>
-                      {!guarantorPending ? (
-                        <>
-                          <input className="form-input" placeholder="Guarantor's Wallet Address" value={guarantorAddr}
-                            onChange={e => setGuarantorAddr(e.target.value)} style={{ marginBottom: '8px' }} />
-                          <button className="btn btn-outline btn-sm" style={{ width: '100%' }} onClick={() => { setTrustPath('guarantor'); handleGuarantorRequest(); }} disabled={!guarantorAddr}>
-                            Send Guarantor Request →
-                          </button>
-                        </>
-                      ) : (
-                        <div style={{ textAlign: 'center', padding: '12px', background: 'rgba(200,151,43,0.08)', borderRadius: 'var(--radius-md)', color: 'var(--lp-gold-dark)', fontWeight: 600, fontSize: '0.85rem' }}>
-                           Guarantor request pending...
+                {/* MASTER STEP 5: Summary */}
+                {masterStep === 5 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+                        <h3 style={{ fontSize: '1.2rem', color: 'var(--lp-green)', marginBottom: '8px' }}>Step 5: Final Review</h3>
+                        
+                        <div style={{ background: 'var(--lp-surface-raised)', padding: '16px', borderRadius: '8px', fontSize: '0.9rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--lp-border-light)' }}>
+                                <span style={{ color: 'var(--lp-slate-muted)' }}>Path Selected:</span>
+                                <span style={{ fontWeight: 600 }}>{selectedPath}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--lp-border-light)' }}>
+                                <span style={{ color: 'var(--lp-slate-muted)' }}>Loan Amount:</span>
+                                <span style={{ fontWeight: 600, color: 'var(--lp-green)' }}>{loanAmount} ALGO</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--lp-border-light)' }}>
+                                <span style={{ color: 'var(--lp-slate-muted)' }}>Wallet Address:</span>
+                                <span style={{ fontWeight: 600 }}>{walletAddress?.substring(0, 8)}...{walletAddress?.slice(-4)}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+                                <span style={{ color: 'var(--lp-slate-muted)' }}>Tier Achieved:</span>
+                                <span style={{ fontWeight: 600 }}>Tier {targetTier} (Max {activeLimit})</span>
+                            </div>
                         </div>
-                      )}
-                    </div>
 
-                    {/* Path C — Solo Start */}
-                    <div className="card" style={{ border: trustPath === 'solo' ? '2px solid var(--lp-green)' : undefined }}>
-                      <h4 style={{ color: 'var(--lp-green)', marginBottom: '4px', fontFamily: 'var(--font-display)' }}>Path C — Solo Start (Tier 0)</h4>
-                      <p style={{ fontSize: '0.88rem', color: 'var(--lp-slate-light)', marginBottom: '8px', lineHeight: 1.5 }}>
-                        Start borrowing on your own within your verified tier limits. Build trust over time.
-                      </p>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--lp-slate-muted)', marginBottom: '12px', padding: '8px', background: 'var(--lp-surface-raised)', borderRadius: 'var(--radius-sm)' }}>
-                        Tier 0 → ₹41,500 &nbsp;|&nbsp; Tier 1 → ₹83,000 &nbsp;|&nbsp; Tier 2 → ₹4,15,000 &nbsp;|&nbsp; Tier 3 → ₹8,30,000
-                      </div>
-                      <button className="btn btn-ghost btn-sm" style={{ width: '100%', border: '1.5px solid var(--lp-border)' }} onClick={() => handleTrustPathSelect('solo')}>
-                        Start at my current Tier →
-                      </button>
+                        {walletError && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '12px', borderRadius: '4px', fontSize: '0.85rem' }}>{walletError}</div>}
+
+                        <button className="btn btn-primary btn-lg" onClick={handleFinalSubmit} disabled={submittingLoan} style={{ marginTop: '16px' }}>
+                            {submittingLoan ? 'Signing & Broadcasting...' : 'Submit Loan Request on Chain'}
+                        </button>
                     </div>
-                  </div>
                 )}
 
-                {/* Step 3: Loan Parameters */}
-                {step === 3 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-                    <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--lp-slate)', fontSize: '1.2rem', marginBottom: '4px' }}>
-                      Step 3 — Set Loan Parameters
-                    </h3>
-
-                    <div>
-                      <label className="form-label">Loan Amount — ₹{loanAmount.toLocaleString('en-IN')}</label>
-                      <input type="range" min={1000} max={maxAmount} step={500} value={loanAmount}
-                        onChange={e => setLoanAmount(Number(e.target.value))}
-                        style={{ width: '100%', accentColor: 'var(--lp-green)' }}
-                      />
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--lp-slate-muted)' }}>
-                        <span>₹1,000</span>
-                        <span>₹{maxAmount.toLocaleString('en-IN')} (Tier {currentTier} limit)</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="form-label">Tenure</label>
-                      <select className="form-input" value={tenure} onChange={e => setTenure(Number(e.target.value))}>
-                        <option value={3}>3 months</option>
-                        <option value={6}>6 months</option>
-                        <option value={9}>9 months</option>
-                        <option value={12}>12 months</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="form-label">Installment Frequency</label>
-                      <select className="form-input" value={frequency} onChange={e => setFrequency(e.target.value as any)}>
-                        <option value="weekly">Weekly</option>
-                        <option value="biweekly">Bi-weekly</option>
-                        <option value="monthly">Monthly</option>
-                      </select>
-                    </div>
-
-                    {/* Preview */}
-                    <div style={{
-                      background: 'rgba(13,79,60,0.04)', padding: '16px', borderRadius: 'var(--radius-md)',
-                      border: '1px solid rgba(13,79,60,0.1)',
-                    }}>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--lp-slate-light)', marginBottom: '8px' }}>Repayment Preview</div>
-                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: 'var(--lp-green)', fontWeight: 700, marginBottom: '4px' }}>
-                        ₹{installmentAmount.toLocaleString('en-IN')} every {freqLabel}
-                      </div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--lp-slate-muted)' }}>
-                        {installmentCount} installments over {tenure} months
-                      </div>
-                    </div>
-
-                    <div style={{ fontSize: '0.78rem', color: 'var(--lp-gold-dark)', fontWeight: 500, background: 'rgba(200,151,43,0.06)', padding: '8px 12px', borderRadius: 'var(--radius-sm)' }}>
-                       Once submitted, dates and installment schedule cannot be changed.
-                    </div>
-
-                    <button className="btn btn-primary btn-lg" style={{ width: '100%' }} onClick={handleLoanConfirm}>
-                      Confirm & Post to Blockchain →
-                    </button>
-                  </div>
-                )}
-              </>
+                </>
             )}
+
           </div>
         )}
       </div>
