@@ -1,0 +1,3 @@
+ADDRESS=CJPDQFM3J7DRBH7PG5UV6O7KGEGYWS6UBVVFYKNTHOJIKKILKX3ITD4QTA
+MNEMONIC=business try unaware wage cook aisle key equip hair inch pupil genre present body typical print public absurd say hidden load agent priority about sell
+ADDRESS_LENGTH=58
