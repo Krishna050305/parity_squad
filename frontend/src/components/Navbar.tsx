@@ -71,7 +71,7 @@ export const Navbar = () => {
                   background: 'rgba(13,79,60,0.06)',
                   borderRadius: 'var(--radius-full)',
                 }}>
-                  {role === 'lender' ? '💰 Lender' : '🤝 Borrower'}
+                  {role === 'lender' ? 'Lender' : 'Borrower'}
                 </span>
                 <button onClick={handleLogout} className="btn btn-ghost btn-sm">
                   Logout

@@ -114,13 +114,13 @@ export const AuthPage = () => {
               className={`role-toggle__btn ${role === 'lender' ? 'role-toggle__btn--active' : ''}`}
               onClick={() => setRole('lender')}
             >
-              💰 Lender
+               Lender
             </button>
             <button
               className={`role-toggle__btn ${role === 'borrower' ? 'role-toggle__btn--active' : ''}`}
               onClick={() => setRole('borrower')}
             >
-              🤝 Borrower
+               Borrower
             </button>
           </div>
         </div>
@@ -135,7 +135,7 @@ export const AuthPage = () => {
               Start funding borrowers and building community trust.
             </p>
             <p style={{ fontSize: '0.78rem', color: 'var(--lp-slate-muted)', fontStyle: 'italic', marginBottom: 'var(--space-lg)', background: 'rgba(13,79,60,0.04)', padding: '8px 12px', borderRadius: 'var(--radius-sm)' }}>
-              ℹ️ Lenders do not need Aadhaar/PAN verification.
+               Lenders do not need Aadhaar/PAN verification.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
@@ -321,7 +321,7 @@ export const AuthPage = () => {
                         </>
                       ) : (
                         <div style={{ textAlign: 'center', padding: '12px', background: 'rgba(200,151,43,0.08)', borderRadius: 'var(--radius-md)', color: 'var(--lp-gold-dark)', fontWeight: 600, fontSize: '0.85rem' }}>
-                          ⏳ Guarantor request pending...
+                           Guarantor request pending...
                         </div>
                       )}
                     </div>
@@ -395,7 +395,7 @@ export const AuthPage = () => {
                     </div>
 
                     <div style={{ fontSize: '0.78rem', color: 'var(--lp-gold-dark)', fontWeight: 500, background: 'rgba(200,151,43,0.06)', padding: '8px 12px', borderRadius: 'var(--radius-sm)' }}>
-                      ⚠️ Once submitted, dates and installment schedule cannot be changed.
+                       Once submitted, dates and installment schedule cannot be changed.
                     </div>
 
                     <button className="btn btn-primary btn-lg" style={{ width: '100%' }} onClick={handleLoanConfirm}>

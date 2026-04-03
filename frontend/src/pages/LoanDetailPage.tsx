@@ -164,7 +164,7 @@ export const LoanDetailPage = () => {
                 {staticProfile.trustScore}
               </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--lp-slate-muted)', marginTop: '8px' }}>
-                {staticProfile.trustScore >= 80 ? '🟢 Excellent' : staticProfile.trustScore >= 60 ? '🟡 Good' : '🔴 Building'}
+                {staticProfile.trustScore >= 80 ? ' Excellent' : staticProfile.trustScore >= 60 ? ' Good' : ' Building'}
               </div>
             </div>
             <div className="card card-elevated" style={{ textAlign: 'center', padding: 'var(--space-xl)' }}>
@@ -177,7 +177,7 @@ export const LoanDetailPage = () => {
                 {riskScore}
               </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--lp-slate-muted)', marginTop: '8px' }}>
-                {riskScore <= 20 ? '🟢 Low Risk' : riskScore <= 40 ? '🟡 Moderate' : '🔴 High Risk'}
+                {riskScore <= 20 ? ' Low Risk' : riskScore <= 40 ? ' Moderate' : ' High Risk'}
               </div>
             </div>
           </div>
@@ -319,7 +319,7 @@ export const LoanDetailPage = () => {
 
           {successTxId && (
             <div style={{ background: 'rgba(13,79,60,0.06)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-md)', fontSize: '0.85rem', color: 'var(--lp-green)', fontWeight: 600 }}>
-              ✅ TX: {successTxId.substring(0, 12)}...
+               TX: {successTxId.substring(0, 12)}...
               <a href={`https://testnet.explorer.perawallet.app/tx/${successTxId}`} target="_blank" rel="noreferrer" style={{ marginLeft: '8px', color: 'var(--lp-gold)' }}>View ↗</a>
             </div>
           )}

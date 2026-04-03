@@ -49,7 +49,7 @@ const BorrowerCard = ({ profile }: { profile: BorrowerProfile }) => {
           <div className="borrower-card__location">{profile.state}</div>
         </div>
         <span className={`trust-badge ${trustClass}`}>
-          <span style={{ fontSize: '0.65rem' }}>⬣</span> {profile.trustScore}
+          <span style={{ fontSize: '0.65rem' }}> </span> {profile.trustScore}
         </span>
       </div>
 
@@ -168,7 +168,7 @@ export const HomePage = () => {
           <div className="hiw-grid">
             {/* For Borrowers */}
             <div>
-              <div className="hiw-column__title">🤝 For Borrowers</div>
+              <div className="hiw-column__title"> For Borrowers</div>
               {[
                 { title: 'Verify Identity', desc: 'Complete KYC with Aadhaar/PAN to unlock your borrowing tier.' },
                 { title: 'Choose Your Path', desc: 'Get vouched, add a guarantor, or start solo at Tier 0.' },
@@ -187,7 +187,7 @@ export const HomePage = () => {
 
             {/* For Lenders */}
             <div>
-              <div className="hiw-column__title">💰 For Lenders</div>
+              <div className="hiw-column__title"> For Lenders</div>
               {[
                 { title: 'Browse Stories', desc: 'Explore verified borrower profiles and their loan purposes.' },
                 { title: 'Fund Any Amount', desc: 'Lend as little or as much as you want to any active loan.' },
@@ -206,7 +206,7 @@ export const HomePage = () => {
 
             {/* On Algorand */}
             <div>
-              <div className="hiw-column__title">⛓️ On Algorand</div>
+              <div className="hiw-column__title"> On Algorand</div>
               {[
                 { title: 'Immutable Records', desc: 'Every transaction is permanently recorded on the blockchain.' },
                 { title: 'Smart Contracts', desc: 'Escrow and distribution handled automatically, no middlemen.' },

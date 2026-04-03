@@ -30,7 +30,7 @@ const Home: React.FC<HomeProps> = () => {
       <div className="hero-content text-center rounded-lg p-6 max-w-md bg-white mx-auto">
         <div className="max-w-md">
           <h1 className="text-4xl">
-            Welcome to <div className="font-bold">AlgoKit 🙂</div>
+            Welcome to <div className="font-bold">AlgoKit </div>
           </h1>
           <p className="py-6">
             This starter has been generated using official AlgoKit React template. Refer to the resource below for next steps.

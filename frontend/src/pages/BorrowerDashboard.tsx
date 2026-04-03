@@ -46,7 +46,7 @@ export const BorrowerDashboard = () => {
         {/* ═══ Email Reminder Banner ═══ */}
         {showReminder && nextInstallment && (
           <div className="alert-banner alert-banner--warning" style={{ marginBottom: 'var(--space-xl)' }}>
-            ⚠️ Your next installment of <strong style={{ margin: '0 4px' }}>{formatCurrency(nextInstallment.amount)}</strong> is due on <strong style={{ marginLeft: '4px' }}>{nextInstallment.dueDate}</strong>. Please ensure ALGO coins are in your wallet.
+             Your next installment of <strong style={{ margin: '0 4px' }}>{formatCurrency(nextInstallment.amount)}</strong> is due on <strong style={{ marginLeft: '4px' }}>{nextInstallment.dueDate}</strong>. Please ensure ALGO coins are in your wallet.
           </div>
         )}
 
