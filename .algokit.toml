@@ -1,0 +1,10 @@
+[project]
+name = "lendpool"
+version = "0.1.0"
+
+[smart_contracts]
+path = "smart_contracts"
+type = "contract"
+
+[deploy]
+command = "python smart_contracts/deploy.py"
