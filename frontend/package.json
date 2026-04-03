@@ -2,8 +2,13 @@
   "name": "lendpool-frontend",
   "version": "0.1.0",
   "author": {
+<<<<<<< HEAD
     "name": "Smit",
     "email": "smitdbangar@gmail.com"
+=======
+    "name": "jui",
+    "email": "juideshmukh07@email.com"
+>>>>>>> origin/main
   },
   "private": true,
   "type": "module",
@@ -33,12 +38,19 @@
     "notistack": "^3.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+<<<<<<< HEAD
     "axios": "^1.6.0",
+=======
+>>>>>>> origin/main
     "tslib": "^2.6.2"
   },
   "scripts": {
     "generate:app-clients": "algokit project link --all",
+<<<<<<< HEAD
     "dev": "vite",
+=======
+    "dev": "npm run generate:app-clients && vite",
+>>>>>>> origin/main
     "build": "npm run generate:app-clients && tsc && vite build",
     "preview": "vite preview"
   },
