@@ -39,12 +39,12 @@ In informal lending systems (WhatsApp groups, friend circles, chit funds):
 
 ## 💡 Solution
 
-Lendora introduces a **trust-first decentralized lending ecosystem** where:
+Lendpool introduces a **trust-first decentralized lending ecosystem** where:
 
 - Loans are posted, funded, and repaid transparently  
 - Trust is established using:
   - Verification tiers  
-  - Community vouching  
+- Community vouching  
   - Guarantor system  
 - All transactions are recorded on the **Algorand blockchain**
 
@@ -183,7 +183,7 @@ All transactions are:
 
 ---
 
-## 🧑‍💻 User Flow
+## 🧑‍推 User Flow
 
 ### 🔄 System Flow Diagram
 
@@ -323,11 +323,47 @@ Fully peer-to-peer
 ## ⚙️ Tech Stack
 
 - Blockchain: Algorand  
-- Smart Contracts: PyTeal / Reach  
-- Backend:  Python  
-- Frontend: React.js  
-- Database: SQL Lite 
+- Smart Contracts: Algorand Python (algopy)  
+- Backend: Python (FastAPI)  
+- Frontend: React.js (Vite)  
 - Wallet: Pera Wallet  
+
+---
+
+## 🛠️ Getting Started
+
+### Prerequisites
+
+- [Docker](https://www.docker.com/)
+- [AlgoKit](https://github.com/algorandfoundation/algokit-cli)
+- Python 3.12+
+- Node.js v22+
+
+### Setup
+
+1. **Bootstrap the project:**
+   ```bash
+   algokit project bootstrap all
+   ```
+
+2. **Start LocalNet:**
+   ```bash
+   algokit localnet start
+   ```
+
+3. **Build and Deploy Smart Contracts:**
+   ```bash
+   algokit project run build
+   # Note: Deployment is configured via smart_contracts/loan_contract/deploy_config.py
+   python -m smart_contracts deploy
+   ```
+
+4. **Run Frontend:**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
 ---
 
@@ -350,3 +386,4 @@ MIT License
 ## 🙌 Acknowledgment
 
 Built to enable **trust-driven decentralized finance for real communities**
+

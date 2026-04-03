@@ -1,0 +1,560 @@
+#pragma version 11
+#pragma typetrack false
+
+
+main:
+    intcblock 0 1 3 8
+    bytecblock "status" "goal_amount" "repaid_amount" "borrower" "funded_amount" "contribution" "deadline" "claimed" "guarantor"
+
+
+    pushbytess 0x884103f5 0x4acd939d
+    txna ApplicationArgs 0
+    match main_opt_in_to_loan_route@4 main_fund_loan_route@5
+
+main_switch_case_next@6:
+
+
+    txn OnCompletion
+    !
+    assert
+    txn ApplicationID
+    bz main_create_NoOp@14
+    pushbytess 0xe319d423 0xfb20697a 0xc5e0f937 0x56ae6ecb 0xf5b4095d
+    txna ApplicationArgs 0
+    match repay_loan claim_repayment add_guarantor mark_default get_loan_info
+    err
+
+main_create_NoOp@14:
+
+
+    pushbytes 0xdc85f076
+    txna ApplicationArgs 0
+    match create_loan
+    err
+
+main_fund_loan_route@5:
+
+
+    intc_1
+    txn OnCompletion
+    shl
+    intc_2
+    &
+    txn ApplicationID
+    &&
+    assert
+    b fund_loan
+
+main_opt_in_to_loan_route@4:
+
+
+    txn OnCompletion
+    intc_1
+    ==
+    txn ApplicationID
+    &&
+    assert
+    b opt_in_to_loan
+
+
+
+create_loan:
+
+
+    txna ApplicationArgs 1
+    dup
+    len
+    intc_3
+    ==
+    assert
+    btoi
+    txna ApplicationArgs 2
+    dup
+    len
+    intc_3
+    ==
+    assert
+    btoi
+    txna ApplicationArgs 3
+    dup
+    len
+    intc_3
+    ==
+    assert
+    btoi
+    txna ApplicationArgs 4
+    dup
+    len
+    intc_3
+    ==
+    assert
+    btoi
+
+
+    bytec_3
+    txn Sender
+    app_global_put
+
+
+    bytec_1
+    uncover 4
+    app_global_put
+
+
+    bytec 4
+    intc_0
+    app_global_put
+
+
+    bytec_2
+    intc_0
+    app_global_put
+
+
+    bytec_0
+    intc_1
+    app_global_put
+
+
+    global LatestTimestamp
+    uncover 3
+    pushint 86400
+    *
+    +
+    bytec 6
+    swap
+    app_global_put
+
+
+    bytec 8
+    global ZeroAddress
+    app_global_put
+
+
+    pushbytes "tier_required"
+    uncover 2
+    app_global_put
+
+
+    pushbytes "tier_badge_id"
+    swap
+    app_global_put
+
+
+    intc_1
+    return
+
+
+
+opt_in_to_loan:
+
+
+    txn Sender
+    bytec 5
+    intc_0
+    app_local_put
+
+
+    txn Sender
+    bytec 7
+    intc_0
+    app_local_put
+
+
+    intc_1
+    return
+
+
+
+fund_loan:
+
+
+    txn GroupIndex
+    intc_1
+    -
+    dup
+    gtxns TypeEnum
+    intc_1
+    ==
+    assert
+
+
+    intc_0
+    bytec_0
+    app_global_get_ex
+    assert
+    intc_1
+    ==
+    assert
+
+
+    global LatestTimestamp
+    intc_0
+    bytec 6
+    app_global_get_ex
+    assert
+    <
+    assert
+
+
+    dup
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    assert
+
+
+    intc_0
+    bytec 4
+    app_global_get_ex
+    assert
+    swap
+    gtxns Amount
+    swap
+    dig 1
+    +
+    bytec 4
+    dig 1
+    app_global_put
+
+
+    txn Sender
+    intc_0
+    bytec 5
+    app_local_get_ex
+    intc_0
+    cover 2
+    select
+
+
+    uncover 2
+    +
+    txn Sender
+    bytec 5
+    uncover 2
+    app_local_put
+
+
+    intc_0
+    bytec_1
+    app_global_get_ex
+    assert
+    >=
+    bz fund_loan_after_if_else@3
+
+
+
+
+
+
+    itxn_begin
+
+
+    intc_0
+    bytec_3
+    app_global_get_ex
+    assert
+
+
+    intc_0
+    bytec_1
+    app_global_get_ex
+    assert
+    itxn_field Amount
+    itxn_field Receiver
+
+
+    intc_1
+    itxn_field TypeEnum
+
+
+    intc_0
+    itxn_field Fee
+
+
+
+
+
+
+    itxn_submit
+
+
+    bytec_0
+    intc_2
+    app_global_put
+
+fund_loan_after_if_else@3:
+
+
+    intc_1
+    return
+
+
+
+repay_loan:
+
+
+    txn GroupIndex
+    intc_1
+    -
+    dup
+    gtxns TypeEnum
+    intc_1
+    ==
+    assert
+
+
+    intc_0
+    bytec_0
+    app_global_get_ex
+    assert
+    intc_2
+    ==
+    assert
+
+
+    txn Sender
+    intc_0
+    bytec_3
+    app_global_get_ex
+    assert
+    ==
+    assert
+
+
+    dup
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    assert
+
+
+    intc_0
+    bytec_2
+    app_global_get_ex
+    assert
+    swap
+    gtxns Amount
+    +
+    bytec_2
+    dig 1
+    app_global_put
+
+
+    intc_0
+    bytec_1
+    app_global_get_ex
+    assert
+    >=
+    bz repay_loan_after_if_else@3
+
+
+    bytec_0
+    pushint 4
+    app_global_put
+
+repay_loan_after_if_else@3:
+
+
+    intc_1
+    return
+
+
+
+claim_repayment:
+
+
+    intc_0
+    bytec_0
+    app_global_get_ex
+    assert
+    pushint 4
+    ==
+    assert
+
+
+    txn Sender
+    intc_0
+    bytec 5
+    app_local_get_ex
+    intc_0
+    cover 2
+    select
+
+
+    txn Sender
+    intc_0
+    bytec 7
+    app_local_get_ex
+    intc_0
+    cover 2
+    select
+
+
+    dig 1
+    assert
+
+
+    !
+    assert
+
+
+    intc_0
+    bytec_2
+    app_global_get_ex
+    assert
+    *
+    intc_0
+    bytec_1
+    app_global_get_ex
+    assert
+    /
+
+
+
+
+
+
+    itxn_begin
+
+
+    txn Sender
+    dig 1
+    itxn_field Amount
+    itxn_field Receiver
+
+
+    intc_1
+    itxn_field TypeEnum
+
+
+    intc_0
+    itxn_field Fee
+
+
+
+
+
+
+    itxn_submit
+
+
+    txn Sender
+    bytec 7
+    uncover 2
+    app_local_put
+
+
+    intc_1
+    return
+
+
+
+add_guarantor:
+
+
+    txna ApplicationArgs 1
+    dup
+    len
+    pushint 32
+    ==
+    assert
+
+
+    intc_0
+    bytec_0
+    app_global_get_ex
+    assert
+    intc_1
+    ==
+    assert
+
+
+    txn Sender
+    intc_0
+    bytec_3
+    app_global_get_ex
+    assert
+    ==
+    assert
+
+
+    bytec 8
+    swap
+    app_global_put
+
+
+    intc_1
+    return
+
+
+
+mark_default:
+
+
+    intc_0
+    bytec_0
+    app_global_get_ex
+    assert
+    intc_2
+    ==
+    assert
+
+
+    global LatestTimestamp
+    intc_0
+    bytec 6
+    app_global_get_ex
+    assert
+    >
+    assert
+
+
+    bytec_0
+    pushint 5
+    app_global_put
+
+
+    intc_1
+    return
+
+
+
+get_loan_info:
+
+
+    intc_0
+    bytec_1
+    app_global_get_ex
+    assert
+    intc_0
+    bytec 4
+    app_global_get_ex
+    assert
+    intc_0
+    bytec_2
+    app_global_get_ex
+    assert
+    intc_0
+    bytec_0
+    app_global_get_ex
+    assert
+
+
+    uncover 3
+    itob
+    uncover 3
+    itob
+    concat
+    uncover 2
+    itob
+    concat
+    swap
+    itob
+    concat
+    pushbytes 0x151f7c75
+    swap
+    concat
+    log
+    intc_1
+    return
