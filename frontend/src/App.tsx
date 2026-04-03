@@ -4,6 +4,7 @@ import { Navbar } from './components/Navbar';
 import { HomePage } from './pages/HomePage';
 import { CreateLoanPage } from './pages/CreateLoanPage';
 import { LoanDetailPage } from './pages/LoanDetailPage';
+import { VerifyPage } from './pages/VerifyPage';
 import { LoraButton } from './components/LoraButton';
 import './styles/App.css';
 
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/loan/:appId" element={<LoanDetailPage />} />
           <Route path="/create" element={<CreateLoanPage />} />
+          <Route path="/verify" element={<VerifyPage />} />
         </Routes>
         <LoraButton />
       </div>

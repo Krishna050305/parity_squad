@@ -7,7 +7,7 @@ load_dotenv()
 def _format_address(server_env: str, port_env: str, default_server: str, default_port: str) -> str:
     addr = os.getenv(server_env, default_server)
     port = os.getenv(port_env, default_port)
-    if ":" not in addr.replace("http://", "").replace("https://", ""):
+    if port and ":" not in addr.replace("http://", "").replace("https://", ""):
         addr = f"{addr}:{port}"
     return addr
 

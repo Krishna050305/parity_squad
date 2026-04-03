@@ -63,6 +63,7 @@ export const Navbar = () => {
             
             <div style={{ display: 'flex', gap: '2.5rem', fontWeight: 600, color: 'var(--text)', fontSize: '1rem' }}>
                 <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>Home</Link>
+                <Link to="/verify" style={{ textDecoration: 'none', color: 'var(--brand-blue)' }}>Verify Account</Link>
                 <Link to="/create" style={{ textDecoration: 'none', color: 'inherit' }}>Create Loan</Link>
             </div>
 
