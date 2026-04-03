@@ -71,16 +71,20 @@ contracts: list[SmartContract] = [
     for folder in root_path.iterdir()
     if folder.is_dir() and has_contract_file(folder) and not folder.name.startswith("_")
 ]
+print(f"DEBUG: Found contracts: {[c.name for c in contracts]}")
+
 
 # -------------------------- Build Logic -------------------------- #
 
 deployment_extension = "py"
 
 
-def _get_output_path(output_dir: Path, deployment_extension: str) -> Path:
+def _get_output_path(
+    output_dir: Path, contract_name: str, deployment_extension: str
+) -> Path:
     """Constructs the output path for the generated client file."""
     return output_dir / Path(
-        "{contract_name}"
+        f"{contract_name}"
         + ("_client" if deployment_extension == "py" else "Client")
         + f".{deployment_extension}"
     )
@@ -99,13 +103,12 @@ def build(output_dir: Path, contract_path: Path) -> Path:
 
     build_result = subprocess.run(
         [
-            "algokit",
-            "--no-color",
-            "compile",
-            "python",
+            sys.executable,
+            "-m",
+            "puyapy",
             str(contract_path.resolve()),
             f"--out-dir={output_dir}",
-            "--output-source-map",
+            "--output-arc32",
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -118,28 +121,34 @@ def build(output_dir: Path, contract_path: Path) -> Path:
     if build_result.returncode:
         raise Exception(f"Could not build contract:\n{build_result.stdout}")
 
-    # Look for arc56.json files and generate the client based on them.
+    # Look for arc32.json files and generate the client based on them.
     app_spec_file_names: list[str] = [
-        file.name for file in output_dir.glob("*.arc56.json")
+        file.name for file in output_dir.glob("*.arc32.json")
     ]
 
     client_file: str | None = None
     if not app_spec_file_names:
         logger.warning(
-            "No '*.arc56.json' file found (likely a logic signature being compiled). Skipping client generation."
+            "No '*.arc32.json' file found (likely a logic signature being compiled). Skipping client generation."
         )
     else:
         for file_name in app_spec_file_names:
             client_file = file_name
-            print(file_name)
+            contract_name = file_name.replace(".arc32.json", "")
+            print(f"Generating client for {file_name}")
             generate_result = subprocess.run(
                 [
-                    "algokit",
-                    "generate",
-                    "client",
-                    str(output_dir),
-                    "--output",
-                    str(_get_output_path(output_dir, deployment_extension)),
+                    sys.executable,
+                    "-m",
+                    "algokit_client_generator",
+                    "-a",
+                    str(output_dir / file_name),
+                    "-o",
+                    str(
+                        _get_output_path(
+                            output_dir, contract_name, deployment_extension
+                        )
+                    ),
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -188,7 +197,7 @@ def main(action: str, contract_name: str | None = None) -> None:
                     (
                         file.name
                         for file in output_dir.iterdir()
-                        if file.is_file() and file.suffixes == [".arc56", ".json"]
+                        if file.is_file() and (file.suffixes == [".arc32", ".json"] or file.suffixes == [".arc56", ".json"])
                     ),
                     None,
                 )

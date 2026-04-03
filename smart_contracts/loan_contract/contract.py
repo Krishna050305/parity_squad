@@ -124,4 +124,8 @@ class LoanContract(ARC4Contract):
 
     @abimethod(readonly=True)
     def get_loan_info(self) -> tuple[UInt64, UInt64, UInt64, UInt64]:
-        return (self.goal_amount.value, self.funded_amount.value, self.repaid_amount.value, self.status.value)
+        goal = self.goal_amount.value
+        funded = self.funded_amount.value
+        repaid = self.repaid_amount.value
+        status = self.status.value
+        return (goal, funded, repaid, status)

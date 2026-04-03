@@ -1,94 +1,117 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { connectWallet, disconnectWallet } from '../wallet';
-import { calculateReputation } from '../api';
-import { TrustPathModal } from './TrustPathModal';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 export const Navbar = () => {
-    const [address, setAddress] = useState<string | null>(localStorage.getItem("connectedAddress"));
-    const [reputation, setReputation] = useState<number | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+  const role = localStorage.getItem('lp_role'); // 'lender' | 'borrower' | null
+  const isAuth = !!role;
 
-    useEffect(() => {
-        if (address) {
-            calculateReputation(address).then(setReputation);
-        } else {
-            setReputation(null);
-        }
-    }, [address]);
+  const isActive = (path: string) => location.pathname === path;
 
-    const handleConnect = async () => {
-        try {
-            const addr = await connectWallet();
-            setAddress(addr);
-        } catch (err) {
-            console.error("Wallet connection failed:", err);
-        }
-    };
+  const publicLinks = [
+    { to: '/', label: 'Home' },
+    { to: '/#categories', label: 'Browse' },
+    { to: '/#how-it-works', label: 'How It Works' },
+  ];
 
-    const handleDisconnect = async () => {
-        await disconnectWallet();
-        setAddress(null);
-    };
+  const lenderLinks = [
+    { to: '/', label: 'Browse' },
+    { to: '/lender/dashboard', label: 'My Portfolio' },
+  ];
 
-    const getRepColor = (rep: number | null) => {
-        if (rep === null) return '#ccc';
-        if (rep > 70) return '#10b981'; // green
-        if (rep >= 40) return '#fbbf24'; // amber
-        return '#ef4444'; // red
-    };
+  const borrowerLinks = [
+    { to: '/borrower/dashboard', label: 'My Loans' },
+    { to: '/borrower/dashboard#trust', label: 'Trust Score' },
+    { to: '/borrower/dashboard#payments', label: 'Payments' },
+  ];
 
-    return (
-        <>
-        <TrustPathModal address={address} />
-        <nav style={{ 
-            background: 'var(--surface)', 
-            padding: '1rem 4rem', 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-            position: 'sticky',
-            top: 0,
-            zIndex: 100
-        }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{
-                    width: '20px',
-                    height: '28px',
-                    background: 'linear-gradient(to bottom, #60a5fa, #2563eb)',
-                    borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
-                }}></div>
-                <h2 style={{ color: 'var(--brand-green)', margin: 0, fontWeight: 800, fontSize: '1.6rem', letterSpacing: '-0.5px' }}>LendPool</h2>
+  const links = !isAuth ? publicLinks : role === 'lender' ? lenderLinks : borrowerLinks;
+
+  const handleLogout = () => {
+    localStorage.removeItem('lp_role');
+    localStorage.removeItem('lp_user');
+    window.location.href = '/';
+  };
+
+  return (
+    <>
+      <nav className="navbar">
+        <div className="navbar__inner">
+          {/* Logo */}
+          <Link to="/" className="navbar__logo" style={{ textDecoration: 'none' }}>
+            <div className="navbar__logo-icon">
+              <span style={{ color: 'white', fontSize: '0.9rem' }}>🏦</span>
             </div>
-            
-            <div style={{ display: 'flex', gap: '2.5rem', fontWeight: 600, color: 'var(--text)', fontSize: '1rem' }}>
-                <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>Home</Link>
-                <Link to="/create" style={{ textDecoration: 'none', color: 'inherit' }}>Create Loan</Link>
-            </div>
+            LendPool
+          </Link>
 
-            <div>
-                {address ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                        {reputation !== null && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f3f4f6', padding: '0.25rem 0.75rem', borderRadius: '1rem' }}>
-                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: getRepColor(reputation) }}></div>
-                                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>Rep: {reputation}%</span>
-                            </div>
-                        )}
-                        <span style={{ fontWeight: 600, color: 'var(--muted)' }}>
-                            {address.slice(0, 5)}...{address.slice(-4)}
-                        </span>
-                        <button onClick={handleDisconnect} className="btn-amber">
-                            Disconnect
-                        </button>
-                    </div>
-                ) : (
-                    <button onClick={handleConnect} className="btn-amber">
-                        Connect Wallet
-                    </button>
-                )}
-            </div>
-        </nav>
-        </>
-    );
+          {/* Desktop Links */}
+          <div className="navbar__links">
+            {links.map(link => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className={`navbar__link ${isActive(link.to) ? 'navbar__link--active' : ''}`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Actions */}
+          <div className="navbar__actions">
+            {isAuth ? (
+              <>
+                <span style={{
+                  fontSize: '0.82rem',
+                  color: 'var(--lp-slate-muted)',
+                  fontWeight: 500,
+                  padding: '4px 12px',
+                  background: 'rgba(13,79,60,0.06)',
+                  borderRadius: 'var(--radius-full)',
+                }}>
+                  {role === 'lender' ? '💰 Lender' : '🤝 Borrower'}
+                </span>
+                <button onClick={handleLogout} className="btn btn-ghost btn-sm">
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link to="/auth">
+                <button className="btn btn-primary btn-sm">Login / Register</button>
+              </Link>
+            )}
+            <button className="mobile-menu-btn" onClick={() => setMobileOpen(true)}>
+              ☰
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile Nav Overlay */}
+      <div className={`mobile-nav ${mobileOpen ? 'mobile-nav--open' : ''}`}>
+        <button className="mobile-nav__close" onClick={() => setMobileOpen(false)}>×</button>
+        {links.map(link => (
+          <Link
+            key={link.to}
+            to={link.to}
+            className="mobile-nav__link"
+            onClick={() => setMobileOpen(false)}
+          >
+            {link.label}
+          </Link>
+        ))}
+        {isAuth ? (
+          <button onClick={() => { handleLogout(); setMobileOpen(false); }} className="btn btn-outline">
+            Logout
+          </button>
+        ) : (
+          <Link to="/auth" onClick={() => setMobileOpen(false)}>
+            <button className="btn btn-primary">Login / Register</button>
+          </Link>
+        )}
+      </div>
+    </>
+  );
 };

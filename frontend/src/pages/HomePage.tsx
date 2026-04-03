@@ -1,106 +1,253 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchLoans, parseGlobalState } from '../api';
-import { LoanCard } from '../components/LoanCard';
-import algosdk from 'algosdk';
+import {
+  categories, borrowerProfiles, testimonials,
+  getInitials, getAvatarColor, getTrustColor, formatCurrency,
+  type Category, type BorrowerProfile,
+} from '../data';
 
-export const HomePage = () => {
-    const [loans, setLoans] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+/* ── Particle Background ──────────────────────────────────────── */
+const Particles = () => {
+  const particles = useMemo(() =>
+    Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      size: 4 + Math.random() * 6,
+      duration: 12 + Math.random() * 18,
+      delay: Math.random() * 15,
+      opacity: 0.04 + Math.random() * 0.06,
+    })), []);
 
-    useEffect(() => {
-        const load = async () => {
-            try {
-                const res = await fetchLoans();
-                if (res.applications) {
-                    const parsed = res.applications.map((app: any) => {
-                       const state = parseGlobalState(app.params['global-state'] || []);
-                       return {
-                           appId: app.id,
-                           borrower: state.borrower || "Unknown",
-                           goal: state.goal_amount || 0,
-                           funded: state.funded_amount || 0,
-                           repaid: state.repaid_amount || 0,
-                           status: state.status || 1,
-                           tierRequired: state.tier_required || 0,
-                           lenderCount: 0 // Mock parameter
-                       };
-                    });
-                    
-                    // Filter loans strictly by the expected goal format existing
-                    setLoans(parsed.filter((p: any) => p.goal > 0));
-                }
-            } catch (err) {
-                console.error("Failed to load loans:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        load();
-    }, []);
+  return (
+    <div className="particles">
+      {particles.map(p => (
+        <span key={p.id} style={{
+          left: p.left,
+          width: p.size, height: p.size,
+          animationDuration: `${p.duration}s`,
+          animationDelay: `${p.delay}s`,
+          opacity: p.opacity,
+        }} />
+      ))}
+    </div>
+  );
+};
 
-    return (
-        <div>
-            <div className="hero-gradient">
-              <h1 style={{ fontSize: '4.5rem', fontWeight: 800, margin: '0 0 1.5rem 0', lineHeight: 1.1, letterSpacing: '-1px' }}>
-                <span style={{ color: '#1f2937' }}>Community-Powered</span><br />
-                <span className="text-gradient">P2P Lending on Algorand</span>
-              </h1>
-              <p style={{ fontSize: '1.35rem', color: 'var(--muted)', maxWidth: '750px', margin: '0 0 3rem 0', lineHeight: 1.6 }}>
-                Borrow based on your community reputation. Lend to peers you trust. All securely executed on the Algorand blockchain.
-              </p>
-              <Link to="/create">
-                <button className="btn-green">Get Started</button>
-              </Link>
-            </div>
+/* ── Borrower Card ────────────────────────────────────────────── */
+const BorrowerCard = ({ profile }: { profile: BorrowerProfile }) => {
+  const trustColor = getTrustColor(profile.trustScore);
+  const trustClass = profile.trustScore >= 80 ? 'trust-badge--high' : profile.trustScore >= 60 ? 'trust-badge--mid' : 'trust-badge--low';
 
-            <div style={{ padding: '6rem 2rem', textAlign: 'center', backgroundColor: '#fafaf9' }}>
-              <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '4rem', color: '#1f2937' }}>Why LendPool?</h2>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', flexWrap: 'wrap' }}>
-                
-                <div className="feature-card">
-                  <div className="icon-wrapper">🛡️</div>
-                  <h3 style={{ margin: 0, color: 'var(--brand-green)', fontSize: '1.4rem' }}>Decentralized</h3>
-                </div>
-
-                <div className="feature-card">
-                  <div className="icon-wrapper">🔍</div>
-                  <h3 style={{ margin: 0, color: 'var(--brand-green)', fontSize: '1.4rem' }}>Transparent</h3>
-                </div>
-
-              </div>
-            </div>
-
-            <div style={{ backgroundColor: 'white', padding: '6rem 2rem' }}>
-                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-                        <h2 style={{ fontSize: '2rem', fontWeight: 700, margin: 0, color: 'var(--text)' }}>Community Feed</h2>
-                        <Link to="/create" style={{ textDecoration: 'none', color: 'var(--brand-green)', fontWeight: 600 }}>
-                            + Post a Loan
-                        </Link>
-                    </div>
-
-                    {loading ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
-                            {[1,2,3].map(i => (
-                                <div key={i} style={{ background: '#f9fafb', height: '240px', borderRadius: '16px', animation: 'pulse 1.5s infinite', border: '1px solid #eee' }}></div>
-                            ))}
-                        </div>
-                    ) : loans.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '5rem 2rem', background: '#f9fafb', borderRadius: '16px', border: '2px dashed #e5e7eb' }}>
-                            <h3 style={{ color: 'var(--text)', fontSize: '1.5rem', marginBottom: '0.5rem' }}>No active loans</h3>
-                            <p style={{ color: 'var(--muted)', marginBottom: '2rem', fontSize: '1.1rem' }}>Be the first to post your story to the community!</p>
-                            <Link to="/create"><button className="btn-amber">Create Loan</button></Link>
-                        </div>
-                    ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
-                            {loans.map(loan => (
-                                <LoanCard key={loan.appId} {...loan} />
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+  return (
+    <div className="borrower-card card-elevated" id={`borrower-${profile.id}`}>
+      <div className="borrower-card__header">
+        <div className="avatar avatar-md" style={{ background: getAvatarColor(profile.name) }}>
+          {getInitials(profile.name)}
         </div>
-    );
+        <div className="borrower-card__info">
+          <div className="borrower-card__name">{profile.name}</div>
+          <div className="borrower-card__location">{profile.state}</div>
+        </div>
+        <span className={`trust-badge ${trustClass}`}>
+          <span style={{ fontSize: '0.65rem' }}>⬣</span> {profile.trustScore}
+        </span>
+      </div>
+
+      <div className="borrower-card__amount">{formatCurrency(profile.amount)}</div>
+      <div className="borrower-card__reason">{profile.reason}</div>
+
+      <div className="borrower-card__meta">
+        <div className="progress-bar" style={{ flex: 1 }}>
+          <div className="progress-bar__fill" style={{ width: `${profile.fundedPct}%` }} />
+        </div>
+        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--lp-green)', minWidth: '38px', textAlign: 'right' }}>{profile.fundedPct}%</span>
+      </div>
+
+      <div className="borrower-card__footer">
+        <span className="borrower-card__lenders">
+          {profile.lenderCount} lender{profile.lenderCount !== 1 ? 's' : ''} contributed
+        </span>
+        <Link to={`/loan/${profile.id}`} style={{ textDecoration: 'none' }}>
+          <button className="btn btn-primary btn-sm">Lend Now →</button>
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+/* ── Landing Page ─────────────────────────────────────────────── */
+export const HomePage = () => {
+  const [activeCategory, setActiveCategory] = useState<Category>('agriculture');
+
+  const filteredProfiles = borrowerProfiles.filter(p => p.category === activeCategory);
+
+  const testimonialsDuped = [...testimonials, ...testimonials];
+
+  return (
+    <div>
+      {/* ═══════ Hero Section ═══════ */}
+      <section className="hero" id="hero">
+        <Particles />
+        <div className="hero__content">
+          <h1 className="hero__tagline">
+            Lend with <em>purpose</em>.<br />
+            Borrow with <em>dignity</em>.
+          </h1>
+          <p className="hero__sub">
+            Community-powered P2P lending on Algorand. Transparent, trust-based, and completely on-chain.
+          </p>
+          <div className="hero__ctas">
+            <Link to="/auth?role=lender">
+              <button className="btn btn-primary btn-lg">Start Lending →</button>
+            </Link>
+            <Link to="/auth?role=borrower">
+              <button className="btn btn-outline btn-lg">I Need a Loan →</button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ Trust Bar ═══════ */}
+      <div className="trust-bar">
+        <div className="trust-bar__inner container">
+          <div className="trust-bar__item"><strong>₹2.4 Cr</strong> disbursed</div>
+          <div className="trust-bar__dot" />
+          <div className="trust-bar__item"><strong>847</strong> loans funded</div>
+          <div className="trust-bar__dot" />
+          <div className="trust-bar__item"><strong>94%</strong> repayment rate</div>
+          <div className="trust-bar__dot" />
+          <div className="trust-bar__item">Built on <strong>Algorand</strong></div>
+        </div>
+      </div>
+
+      {/* ═══════ Impact Categories ═══════ */}
+      <section className="section" id="categories">
+        <div className="container">
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', textAlign: 'center', marginBottom: 'var(--space-sm)', color: 'var(--lp-slate)' }}>
+            Fund a Dream Today
+          </h2>
+          <p style={{ textAlign: 'center', color: 'var(--lp-slate-muted)', fontSize: '1rem', marginBottom: 'var(--space-2xl)', maxWidth: '550px', margin: '0 auto var(--space-2xl) auto' }}>
+            Browse borrowers by category and make a real impact
+          </p>
+
+          <div className="categories-row" style={{ marginBottom: 'var(--space-2xl)' }}>
+            {categories.map(cat => (
+              <div
+                key={cat.key}
+                className={`category-card ${activeCategory === cat.key ? 'category-card--active' : ''}`}
+                onClick={() => setActiveCategory(cat.key)}
+                id={`cat-${cat.key}`}
+              >
+                <div className="category-card__icon">{cat.icon}</div>
+                <div className="category-card__label">{cat.label}</div>
+                <div className="category-card__count">{cat.count} borrowers</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Borrower Grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+            gap: 'var(--space-xl)',
+          }}>
+            {filteredProfiles.map(profile => (
+              <BorrowerCard key={profile.id} profile={profile} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ How It Works ═══════ */}
+      <section className="section" id="how-it-works" style={{ background: 'var(--lp-surface)' }}>
+        <div className="container">
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', textAlign: 'center', marginBottom: 'var(--space-3xl)', color: 'var(--lp-slate)' }}>
+            How LendPool Works
+          </h2>
+
+          <div className="hiw-grid">
+            {/* For Borrowers */}
+            <div>
+              <div className="hiw-column__title">🤝 For Borrowers</div>
+              {[
+                { title: 'Verify Identity', desc: 'Complete KYC with Aadhaar/PAN to unlock your borrowing tier.' },
+                { title: 'Choose Your Path', desc: 'Get vouched, add a guarantor, or start solo at Tier 0.' },
+                { title: 'Get Funded', desc: 'Post your loan story and let the community rally behind you.' },
+                { title: 'Repay in Installments', desc: 'Pay weekly/monthly installments and build your trust score.' },
+              ].map((step, i) => (
+                <div className="hiw-step" key={i}>
+                  <div className="hiw-step__num">{i + 1}</div>
+                  <div className="hiw-step__text">
+                    <strong>{step.title}</strong>
+                    {step.desc}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* For Lenders */}
+            <div>
+              <div className="hiw-column__title">💰 For Lenders</div>
+              {[
+                { title: 'Browse Stories', desc: 'Explore verified borrower profiles and their loan purposes.' },
+                { title: 'Fund Any Amount', desc: 'Lend as little or as much as you want to any active loan.' },
+                { title: 'Track Repayments', desc: 'Monitor every repayment on-chain with full transparency.' },
+                { title: 'Earn Goodwill', desc: "Build your lender reputation and support your community's growth." },
+              ].map((step, i) => (
+                <div className="hiw-step" key={i}>
+                  <div className="hiw-step__num">{i + 1}</div>
+                  <div className="hiw-step__text">
+                    <strong>{step.title}</strong>
+                    {step.desc}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* On Algorand */}
+            <div>
+              <div className="hiw-column__title">⛓️ On Algorand</div>
+              {[
+                { title: 'Immutable Records', desc: 'Every transaction is permanently recorded on the blockchain.' },
+                { title: 'Smart Contracts', desc: 'Escrow and distribution handled automatically, no middlemen.' },
+                { title: 'Transparent History', desc: 'Anyone can verify any loan, payment, or trust score on-chain.' },
+                { title: 'No Middlemen', desc: 'Peer-to-peer lending, executed trustlessly via smart contracts.' },
+              ].map((step, i) => (
+                <div className="hiw-step" key={i}>
+                  <div className="hiw-step__num">{i + 1}</div>
+                  <div className="hiw-step__text">
+                    <strong>{step.title}</strong>
+                    {step.desc}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ Testimonials Marquee ═══════ */}
+      <section className="marquee-container">
+        <div className="marquee-track">
+          {testimonialsDuped.map((t, i) => (
+            <div className="marquee-item" key={i}>
+              {t.text}
+              <span className="marquee-item__author">— {t.author}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══════ Footer ═══════ */}
+      <footer className="footer">
+        <div className="container">
+          <p style={{ marginBottom: '8px' }}>
+            <strong style={{ color: 'var(--lp-gold)', fontFamily: 'var(--font-display)', fontSize: '1.2rem' }}>LendPool</strong>
+          </p>
+          <p>Community-powered P2P lending on Algorand. Built with trust, transparency, and purpose.</p>
+          <p style={{ marginTop: '12px', opacity: 0.6 }}>© 2025 Parity Squad. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  );
 };

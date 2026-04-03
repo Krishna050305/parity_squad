@@ -6,5 +6,5 @@ type = "contract"
 name = "parity_squad"
 
 [project.run]
-build = { commands = [".venv/bin/python -m smart_contracts build"] }
-deploy = { commands = [".venv/bin/python -m smart_contracts deploy"] }
+build = { commands = ["python -m smart_contracts build"] }
+deploy = { commands = ["python -m smart_contracts deploy"] }

@@ -14,11 +14,17 @@ def deploy() -> None:
     algorand = algokit_utils.AlgorandClient.from_environment()
     deployer_ = algorand.account.from_environment("DEPLOYER")
 
-    with open("smart_contracts/artifacts/loan_contract/LoanContract.arc56.json") as f:
+    with open("smart_contracts/artifacts/loan_contract/LoanContract.arc32.json") as f:
         spec = json.load(f)
 
-    approval = base64.b64decode(spec["byteCode"]["approval"])
-    clear = base64.b64decode(spec["byteCode"]["clear"])
+    # ARC-32 source is base64-encoded TEAL; compile via algod
+    approval_teal = base64.b64decode(spec["source"]["approval"]).decode("utf-8")
+    clear_teal = base64.b64decode(spec["source"]["clear"]).decode("utf-8")
+
+    approval_result = algorand.client.algod.compile(approval_teal)
+    approval = base64.b64decode(approval_result["result"])
+    clear_result = algorand.client.algod.compile(clear_teal)
+    clear = base64.b64decode(clear_result["result"])
 
     method = algosdk.abi.Method.from_signature("create_loan(uint64,uint64,uint64,asset)void")
     selector = method.get_selector()
@@ -26,18 +32,23 @@ def deploy() -> None:
     # Get Tier 1 badge id for deployment check
     tier1_badge_id = int(os.getenv("TIER1_BADGE_ID", 1004))
 
+    # Calculate extra pages needed (each page = 2048 bytes)
+    import math
+    extra_pages = max(0, math.ceil(len(approval) / 2048) - 1)
+
     app_call = ApplicationCreateTxn(
         sender=deployer_.address,
         sp=algorand.client.algod.suggested_params(),
         on_complete=OnComplete.NoOpOC,
         approval_program=approval,
         clear_program=clear,
+        extra_pages=extra_pages,
         global_schema=StateSchema(
-            spec["state"]["schema"]["global"]["ints"],
-            spec["state"]["schema"]["global"]["bytes"],
+            spec["state"]["global"]["num_uints"],
+            spec["state"]["global"]["num_byte_slices"],
         ),
         local_schema=StateSchema(
-            spec["state"]["schema"]["local"]["ints"], spec["state"]["schema"]["local"]["bytes"]
+            spec["state"]["local"]["num_uints"], spec["state"]["local"]["num_byte_slices"]
         ),
         app_args=[
             selector,
