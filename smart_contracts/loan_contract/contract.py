@@ -36,6 +36,20 @@ class LoanContract(ARC4Contract):
         tier_required: UInt64,
         badge_asa: Asset,
     ) -> None:
+        # Enforce borrow limits based on tier (in microALGO)
+        if tier_required == UInt64(0):
+            assert goal_amount <= UInt64(500_000_000), "Tier 0 limit exceeded (500 ALGO)"
+        elif tier_required == UInt64(1):
+            assert goal_amount <= UInt64(2_000_000_000), "Tier 1 limit exceeded (2,000 ALGO)"
+        elif tier_required == UInt64(2):
+            assert goal_amount <= UInt64(5_000_000_000), "Tier 2 limit exceeded (5,000 ALGO)"
+        elif tier_required == UInt64(3):
+            assert goal_amount <= UInt64(20_000_000_000), "Tier 3 limit exceeded (20,000 ALGO)"
+        elif tier_required == UInt64(4):
+            assert goal_amount <= UInt64(50_000_000_000), "Tier 4 limit exceeded (50,000 ALGO)"
+        else:
+            assert False, "Invalid tier"
+
         # Verify the borrower holds the required tier badge ASA
         # badge_asa ID of 0 means no badge required (Tier 0 / wallet-only)
         if badge_asa.id > UInt64(0):

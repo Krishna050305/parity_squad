@@ -29,7 +29,7 @@ factory = AppFactory(
         algorand=client,
         app_spec=app_spec_path.read_text(),
         default_sender=deployer.address,
-        app_name="LoanContract_v2",
+        app_name="LoanContract_v3",
     )
 )
 
