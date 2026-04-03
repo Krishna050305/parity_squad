@@ -1,0 +1,59 @@
+﻿Usage: algokit init [OPTIONS] COMMAND [ARGS]...
+
+  Initializes a new project from a template, including prompting for template
+  specific questions to be used in template rendering.
+
+  Templates can be default templates shipped with AlgoKit, or custom templates
+  in public Git repositories.
+
+  Includes ability to initialise Git repository, run algokit project bootstrap
+  and automatically open Visual Studio Code.
+
+  This should be run in the parent directory that you want the project folder
+  created in.
+
+  By default, the `--workspace` flag creates projects within a workspace
+  structure or integrates them into an existing one, promoting organized
+  management of multiple projects. Alternatively, to disable this behavior use
+  the `--no-workspace` flag, which ensures the new project is created in a
+  standalone target directory. This is suitable for isolated projects or when
+  workspace integration is unnecessary.
+
+Options:
+  -n, --name TEXT                 Name of the project / directory / repository
+                                  to create.
+  -t, --template [tealscript|typescript|python|react|fullstack|base]
+                                  Name of an official template to use. To
+                                  choose interactively, run this command with
+                                  no arguments.
+  --template-url URL              URL to a git repo with a custom project
+                                  template.
+  --template-url-ref URL          Specific tag, branch or commit to use on git
+                                  repo specified with --template-url. Defaults
+                                  to latest.
+  --UNSAFE-SECURITY-accept-template-url
+                                  Accept the specified template URL,
+                                  acknowledging the security implications of
+                                  arbitrary code execution trusting an
+                                  unofficial template.
+  --git / --no-git                Initialise git repository in directory after
+                                  creation.
+  --defaults                      Automatically choose default answers without
+                                  asking when creating this template.
+  --bootstrap / --no-bootstrap    Whether to run `algokit project bootstrap`
+                                  to install and configure the new project's
+                                  dependencies locally.
+  --ide / --no-ide                Whether to open an IDE for you if the IDE
+                                  and IDE config are detected. Supported IDEs:
+                                  VS Code.
+  --workspace / --no-workspace    Whether to prefer structuring standalone
+                                  projects as part of a workspace. An AlgoKit
+                                  workspace is a conventional project
+                                  structure that allows managing multiple
+                                  standalone projects in a monorepo.
+  -a, --answer <key> <value>      Answers key/value pairs to pass to the
+                                  template.
+  -h, --help                      Show this message and exit.
+
+Commands:
+  example  Initialize a new project from an example template.

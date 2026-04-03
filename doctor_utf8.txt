@@ -1,0 +1,25 @@
+﻿HTTP Request: GET https://api.github.com/repos/algorandfoundation/algokit-cli/releases/latest "HTTP/1.1 200 OK"
+timestamp: 2026-04-03T08:46:36+00:00
+AlgoKit: 2.10.2
+AlgoKit Python: 3.13.3 (tags/v3.13.3:6280bb5, Apr  8 2025, 14:47:33) [MSC v.1943 64 bit (AMD64)] (location: C:\Users\smit\pipx\venvs\algokit)
+OS: Windows-11-10.0.26200-SP0
+docker: 29.2.1
+docker compose: 5.1.0
+git: 2.48.1.windows.1
+python: 3.13.3 (location: C:\Program Files\Python313\python.EXE)
+python3: Command exited with code: 9009
+  Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+pipx: Command not found!
+  pipx is required if poetry is not installed in order to install it automatically;
+  install via https://pypa.github.io/pipx/
+poetry: Command not found!
+  Poetry is required for some Python-based templates;
+  install via `algokit project bootstrap` within project directory, or via:
+  https://python-poetry.org/docs/#installation
+node: 24.14.0
+npm: 11.9.0
+winget: 1.28.220
+
+If you are experiencing a problem with AlgoKit, feel free to submit an issue via:
+https://github.com/algorandfoundation/algokit-cli/issues/new
+Please include this output, if you want to populate this message in your clipboard, run `algokit doctor -c`
