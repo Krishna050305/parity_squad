@@ -3,10 +3,11 @@ import dotenv
 from pathlib import Path
 from algokit_utils import AlgorandClient
 from algokit_utils.applications.app_factory import (
-    AppFactory, 
+    AppFactory,
     AppFactoryParams,
     AppFactoryCreateMethodCallParams
 )
+from algokit_utils.applications.app_deployer import OnSchemaBreak, OnUpdate
 
 # Load environment
 dotenv.load_dotenv()
@@ -28,17 +29,18 @@ factory = AppFactory(
         algorand=client,
         app_spec=app_spec_path.read_text(),
         default_sender=deployer.address,
+        app_name="LoanContract_v2",
     )
 )
 
 # Deploy specifying the create_loan method and arguments
-# goal_amount=1000000 (1 ALGO), duration_days=30, tier_required=1, badge_asa_id=0
+# goal_amount=1_000_000 (1 ALGO), duration_days=30, tier_required=0, badge_asa=0 (Tier 0)
 app_client, result = factory.deploy(
-    on_schema_break="replace",
-    on_update="update",
+    on_schema_break=OnSchemaBreak.ReplaceApp,
+    on_update=OnUpdate.ReplaceApp,
     create_params=AppFactoryCreateMethodCallParams(
         method="create_loan",
-        args=[1_000_000, 30, 1, 0]
+        args=[1_000_000, 30, 0, 0]  # badge_asa=0 means Tier 0 (no badge check)
     )
 )
 

@@ -1,6 +1,7 @@
 import algopy
 from algopy import (
     ARC4Contract,
+    Asset,
     Global,
     LocalState,
     Txn,
@@ -15,7 +16,7 @@ class LoanContract(ARC4Contract):
         # Local State
         self.contribution = LocalState(UInt64)
         self.claimed = LocalState(UInt64)
-        
+
         # Global State
         self.borrower = arc4.Address()
         self.goal_amount = UInt64(0)
@@ -33,8 +34,14 @@ class LoanContract(ARC4Contract):
         goal_amount: UInt64,
         duration_days: UInt64,
         tier_required: UInt64,
-        badge_asa_id: UInt64,
+        badge_asa: Asset,
     ) -> None:
+        # Verify the borrower holds the required tier badge ASA
+        # badge_asa ID of 0 means no badge required (Tier 0 / wallet-only)
+        if badge_asa.id > UInt64(0):
+            badge_balance = badge_asa.balance(Txn.sender)
+            assert badge_balance >= UInt64(1), "Borrower does not hold the required tier badge"
+
         self.borrower = arc4.Address(Txn.sender)
         self.goal_amount = goal_amount
         self.funded_amount = UInt64(0)
@@ -42,7 +49,7 @@ class LoanContract(ARC4Contract):
         self.status = UInt64(1)  # OPEN
         self.deadline = Global.latest_timestamp + duration_days * UInt64(86400)
         self.tier_required = tier_required
-        self.tier_badge_id = badge_asa_id
+        self.tier_badge_id = badge_asa.id
         # self.guarantor is already initialized to zero address
 
     @arc4.abimethod
@@ -78,20 +85,20 @@ class LoanContract(ARC4Contract):
     @arc4.abimethod
     def claim_repayment(self) -> None:
         assert self.status == UInt64(4), "Loan is not CLOSED"
-        
+
         contribution = self.contribution.get(Txn.sender, UInt64(0))
         assert contribution > 0, "No contribution found"
         assert self.claimed.get(Txn.sender, UInt64(0)) == 0, "Already claimed"
 
         # Calculate pro-rata share: (contribution * repaid_amount) // goal_amount
         share = (contribution * self.repaid_amount) // self.goal_amount
-        
+
         itxn.Payment(
             receiver=Txn.sender,
             amount=share,
             fee=0,
         ).submit()
-        
+
         self.claimed[Txn.sender] = share
 
     @arc4.abimethod
