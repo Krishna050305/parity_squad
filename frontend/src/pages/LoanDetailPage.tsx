@@ -73,9 +73,12 @@ export const LoanDetailPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [application_id]);
 
+    const [error, setError] = useState<string | null>(null);
+
     const handleAction = async (actionFn: any, payload: any) => {
+        setError(null);
         if (!connectedAddress) {
-            alert("Connect wallet first!");
+            setError("Connect wallet first!");
             return;
         }
         try {
@@ -86,7 +89,13 @@ export const LoanDetailPage = () => {
             await loadData(); // Reload UI natively based on prompts
         } catch (err: any) {
             console.error(err);
-            alert(err.message || 'Action failed');
+            let msg = err.message || 'Action failed';
+            if (msg.includes("Operation cancelled") || msg.includes("User Rejected")) {
+                msg = "Transaction was rejected in the wallet.";
+            } else if (msg.includes("overspend")) {
+                msg = "Insufficient balance to complete this transaction.";
+            }
+            setError(msg);
         } finally {
             setActionLoading(false);
         }
@@ -114,11 +123,11 @@ export const LoanDetailPage = () => {
             return (
                 <div style={{ background: '#f9fafb', padding: '1.5rem', borderRadius: '12px', marginTop: '2rem' }}>
                     <h3 style={{ margin: '0 0 1rem 0' }}>Fund this Loan</h3>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                         <input 
                             type="number" placeholder="Amount (ALGO)" 
                             value={fundAmount} onChange={e => setFundAmount(e.target.value)}
-                            style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
+                            style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', minWidth: '150px' }}
                         />
                         <button 
                             className="btn-green" onClick={() => handleAction(fundLoan, { lender_address: connectedAddress, app_id: application_id, amount_microalgos: parseInt(fundAmount) * 1e6 })}
@@ -135,11 +144,11 @@ export const LoanDetailPage = () => {
             return (
                 <div style={{ background: '#fef3c7', padding: '1.5rem', borderRadius: '12px', marginTop: '2rem' }}>
                     <h3 style={{ color: '#b45309', margin: '0 0 1rem 0' }}>Make Repayment</h3>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                         <input 
                             type="number" placeholder="Amount (ALGO)" 
                             value={repayAmount} onChange={e => setRepayAmount(e.target.value)}
-                            style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #fcd34d' }}
+                            style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #fcd34d', minWidth: '150px' }}
                         />
                         <button 
                             className="btn-amber" onClick={() => handleAction(repayLoan, { borrower_address: connectedAddress, app_id: application_id, amount_microalgos: parseInt(repayAmount) * 1e6 })}
@@ -203,6 +212,8 @@ export const LoanDetailPage = () => {
                         <div style={{ width: `${pct}%`, height: '100%', background: 'var(--brand-green)', transition: 'width 0.5s ease' }}></div>
                     </div>
                 </div>
+
+                {error && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', fontWeight: 500 }}>{error}</div>}
 
                 {successfulTxId && (
                     <div style={{ margin: '1rem 0' }}>

@@ -101,8 +101,8 @@ export const CreateLoanPage = () => {
                         />
                     </div>
 
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: '1 1 200px' }}>
                             <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>Goal Amount (ALGO)</label>
                             <input 
                                 type="number" 
@@ -118,7 +118,7 @@ export const CreateLoanPage = () => {
                             />
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: '1 1 200px' }}>
                             <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>Duration (Days)</label>
                             <input 
                                 type="number" 

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StatusBadge } from './StatusBadge';
 import { TierBadge } from './TierBadge';
+import { calculateReputation } from '../api';
 
 export const LoanCard = ({ appId, borrower, goal, funded, repaid, status, tierRequired, lenderCount }: any) => {
     const navigate = useNavigate();
@@ -10,6 +11,21 @@ export const LoanCard = ({ appId, borrower, goal, funded, repaid, status, tierRe
     // Status mapping based on global state uint
     const statusMap: any = { 1: 'OPEN', 2: 'FUNDED', 3: 'REPAYING', 4: 'CLOSED', 5: 'DEFAULTED' };
     const statusStr = statusMap[status] || 'UNKNOWN';
+
+    const [reputation, setReputation] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (borrower) {
+            calculateReputation(borrower).then(setReputation);
+        }
+    }, [borrower]);
+
+    const getRepColor = (rep: number | null) => {
+        if (rep === null) return '#ccc';
+        if (rep > 70) return '#10b981'; // green
+        if (rep >= 40) return '#fbbf24'; // amber
+        return '#ef4444'; // red
+    };
 
     return (
         <div style={{
@@ -32,7 +48,15 @@ export const LoanCard = ({ appId, borrower, goal, funded, repaid, status, tierRe
                         <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.2rem' }}>
                             {borrower ? `${borrower.substring(0, 5)}...${borrower.substring(borrower.length - 4)}` : 'Unknown User'}
                         </div>
-                        <TierBadge tier={tierRequired} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <TierBadge tier={tierRequired} />
+                            {reputation !== null && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text)', background: '#f3f4f6', padding: '0.1rem 0.5rem', borderRadius: '1rem' }}>
+                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: getRepColor(reputation) }}></div>
+                                    Resp: {reputation}%
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <StatusBadge status={statusStr} />
