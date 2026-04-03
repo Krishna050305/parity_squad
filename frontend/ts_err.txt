@@ -1,0 +1,6 @@
+﻿src/App.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/pages/LoanDetailPage.tsx(9,42): error TS6133: 'walletAddress' is declared but its value is never read.
+src/wallet.ts(7,10): error TS2339: Property 'Buffer' does not exist on type 'Window & typeof globalThis'.
+src/wallet.ts(7,26): error TS2339: Property 'Buffer' does not exist on type 'Window & typeof globalThis'.
+src/wallet.ts(17,22): error TS2339: Property 'AlgodClient' does not exist on type 'typeof import("D:/Algorand/parity_squad/frontend/node_modules/algosdk/dist/types/main")'.
+src/wallet.ts(29,16): error TS2339: Property 'data' does not exist on type '{}'.
