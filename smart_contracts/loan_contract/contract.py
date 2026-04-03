@@ -1,5 +1,5 @@
 import algopy
-from algopy import ARC4Contract, GlobalState, LocalState, UInt64, Account, Global, Txn, gtxn, itxn
+from algopy import ARC4Contract, GlobalState, LocalState, UInt64, Account, Global, Txn, gtxn, itxn, Asset, op
 from algopy.arc4 import abimethod
 
 class LoanContract(ARC4Contract):
@@ -23,8 +23,24 @@ class LoanContract(ARC4Contract):
         goal_amount: UInt64,
         duration_days: UInt64,
         tier_required: UInt64,
-        badge_asa_id: UInt64,
+        badge_asset: Asset,
     ) -> None:
+        assert tier_required <= UInt64(3), "Invalid tier"
+        
+        if tier_required == UInt64(0):
+            assert goal_amount <= UInt64(500_000_000), "Tier 0 limit is 500"
+        elif tier_required == UInt64(1):
+            assert goal_amount <= UInt64(2000_000_000), "Tier 1 limit is 2000"
+        elif tier_required == UInt64(2):
+            assert goal_amount <= UInt64(5000_000_000), "Tier 2 limit is 5000"
+        elif tier_required == UInt64(3):
+            assert goal_amount <= UInt64(20000_000_000), "Tier 3 limit is 20000"
+
+        if tier_required > UInt64(0):
+            balance, opted_in = op.AssetHoldingGet.asset_balance(Txn.sender, badge_asset)
+            assert opted_in, "Borrower not opted into badge"
+            assert balance > UInt64(0), "Borrower does not hold the required tier badge"
+
         self.borrower.value = Txn.sender
         self.goal_amount.value = goal_amount
         self.funded_amount.value = UInt64(0)
@@ -33,7 +49,7 @@ class LoanContract(ARC4Contract):
         self.deadline.value = Global.latest_timestamp + (duration_days * 86400)
         self.guarantor.value = Global.zero_address
         self.tier_required.value = tier_required
-        self.tier_badge_id.value = badge_asa_id
+        self.tier_badge_id.value = badge_asset.id
 
     @abimethod(allow_actions=["OptIn"])
     def opt_in_to_loan(self) -> None:

@@ -1,0 +1,59 @@
+#pragma version 11
+#pragma typetrack false
+
+// algopy.arc4.ARC4Contract.approval_program() -> uint64:
+main:
+    // smart_contracts/test_compile.py:4
+    // class TestContract(ARC4Contract):
+    txn NumAppArgs
+    bz main___algopy_default_create@5
+    pushbytes 0x2a337771 // method "test(uint64)void"
+    txna ApplicationArgs 0
+    match main_test_route@3
+    err
+
+main_test_route@3:
+    // smart_contracts/test_compile.py:5
+    // @abimethod
+    txn OnCompletion
+    !
+    txn ApplicationID
+    &&
+    assert
+    b test
+
+main___algopy_default_create@5:
+    txn OnCompletion
+    !
+    txn ApplicationID
+    !
+    &&
+    return
+
+
+// smart_contracts.test_compile.TestContract.test[routing]() -> void:
+test:
+    // smart_contracts/test_compile.py:5
+    // @abimethod
+    txna ApplicationArgs 1
+    dup
+    len
+    pushint 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    // smart_contracts/test_compile.py:7
+    // balance, opted_in = op.AssetHoldingGet.asset_balance(Txn.sender, asset)
+    txn Sender
+    swap
+    asset_holding_get AssetBalance
+    // smart_contracts/test_compile.py:8
+    // assert opted_in, "Not opted in"
+    assert // Not opted in
+    // smart_contracts/test_compile.py:9
+    // assert balance > 0, "No balance"
+    assert // No balance
+    // smart_contracts/test_compile.py:5
+    // @abimethod
+    pushint 1
+    return
