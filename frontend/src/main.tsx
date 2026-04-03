@@ -6,7 +6,7 @@ import App from './App.tsx'
 
 // Manual polyfill for immediate access if needed
 if (typeof window !== 'undefined') {
-  window.Buffer = Buffer;
+  (window as any).Buffer = Buffer;
 }
 
 createRoot(document.getElementById('root')!).render(

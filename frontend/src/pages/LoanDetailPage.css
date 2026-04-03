@@ -1,75 +1,230 @@
 .loan-detail-page {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: calc(100vh - 80px);
+  padding: 2rem 1rem;
 }
 
-.detail-card {
-  width: 100%;
-  max-width: 600px;
-  margin-top: 2rem;
-}
-
-.detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 1rem;
-}
-
-.badge {
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-
-.badge-open {
-  background-color: var(--brand-green-light);
-  color: var(--brand-green-dark);
-}
-
-.detail-body {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.info-group {
+.detail-layout {
+  max-width: 800px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
+  gap: 1.5rem;
 }
 
-.info-label {
-  font-size: 0.85rem;
-  color: var(--muted);
-  margin-bottom: 0.25rem;
+/* ── Header ── */
+.detail-header-card {
+  padding: 2rem;
 }
 
-.info-value {
+.detail-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.borrower-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.borrower-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.borrower-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.borrower-address {
   font-size: 1.1rem;
   font-weight: 600;
+  font-family: 'SF Mono', 'Fira Code', monospace;
   color: var(--text);
 }
 
-.detail-actions {
+.status-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.deadline-info {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* ── Progress ── */
+.progress-section {
+  margin-bottom: 2rem;
+}
+
+.progress-track-lg {
+  width: 100%;
+  height: 12px;
+  background-color: #e7e5e4;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.progress-fill-lg {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand-green), #4ade80);
+  border-radius: 6px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
+}
+
+.progress-stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.primary-stat {
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.primary-stat strong {
+  font-size: 1.25rem;
+  color: var(--brand-green-dark);
+}
+
+.secondary-stat {
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.repaid-stat {
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--brand-amber);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ── Actions ── */
+.action-section {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.btn-outline {
-  background-color: transparent;
-  border: 1px solid var(--border);
-  color: var(--text);
+.action-msg {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--muted);
+  background: #f5f5f4;
+  padding: 0.75rem;
+  border-radius: var(--radius);
 }
 
-.btn-outline:hover {
-  border-color: var(--brand-blue);
+.btn-large {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  width: 100%;
+}
+
+/* ── History ── */
+.history-card {
+  padding: 2rem;
+}
+
+.history-card h3 {
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+}
+
+.history-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 2rem 0;
+  font-size: 0.95rem;
+}
+
+.txn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.txn-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.txn-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.txn-type {
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-transform: capitalize;
+}
+
+.txn-time {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.txn-amount-link {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.txn-amount {
+  font-weight: 700;
+  color: var(--brand-green-dark);
+}
+
+/* ── Footer ── */
+.detail-footer {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.explorer-link {
   color: var(--brand-blue);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.explorer-link:hover {
+  text-decoration: underline;
+}
+
+/* States */
+.loading-state, .error-state {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.loading-state p {
+  color: var(--muted);
+  margin-top: 1rem;
 }
