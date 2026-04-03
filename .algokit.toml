@@ -2,8 +2,9 @@
 min_version = "v2.0.0"
 
 [project]
-type = 'workspace'
-projects_root_path = 'projects'
+type = "contract"
+name = "parity_squad"
 
 [project.run]
-build = ['lendpool-contracts', 'lendpool-frontend']
+build = { commands = [".venv/bin/python -m smart_contracts build"] }
+deploy = { commands = [".venv/bin/python -m smart_contracts deploy"] }
