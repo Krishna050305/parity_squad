@@ -31,6 +31,7 @@ from .db_models import (
     LoanReceipt as DBLoanReceipt,
 )
 from . import crud
+from . import ml_service
 
 from .kyc import verify_email_otp, verify_phone_otp, hash_pan_aadhaar, get_tier_for_verification
 from .badge_minting import mint_tier_badge
@@ -307,6 +308,37 @@ def verify_user(req: VerificationRequest, db: Session = Depends(get_db)):
         "wallet": req.wallet_address,
         "achieved_tier": user.tier,
         "badge_asa_id": issued_badge,
+    }
+
+
+# ══════════════════════════════════════════════════════════════════
+#  1.5 MACHINE LEARNING INFERENCE
+# ══════════════════════════════════════════════════════════════════
+
+@app.get("/users/{wallet_address}/ml-score")
+def calculate_user_ml_score(wallet_address: str, db: Session = Depends(get_db)):
+    """Calculate and return the dynamic ML Trust Score (0-1000) for a user based on history."""
+    user = crud.get_user_by_wallet(db, wallet_address)
+    if not user:
+        lp_error(404, "NOT_FOUND", "User not found.", "Check the wallet address.")
+    
+    # 1. Extract dynamic DB features
+    features = ml_service.extract_user_features(db, user)
+    
+    # 2. Run through pre-trained RandomForest model
+    trust_score = ml_service.calculate_ml_trust_score(features)
+    
+    # 3. Apply the 0-1000 score directly to the user
+    from decimal import Decimal
+    user.trust_score = Decimal(str(trust_score))
+    
+    # As requested, we ignore Risk Score scaling in this exact route.
+    db.commit()
+    
+    return {
+        "wallet_address": wallet_address,
+        "ml_trust_score": trust_score,
+        "features_used": features
     }
 
 
