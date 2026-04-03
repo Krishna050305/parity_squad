@@ -3,21 +3,23 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Navbar } from './components/Navbar';
 import { HomePage } from './pages/HomePage';
 import { CreateLoanPage } from './pages/CreateLoanPage';
-import './styles/App.css'; 
-
-const LoanDetailPage = () => <div style={{ padding: '2rem' }}><h1>Loan Detail</h1></div>;
+import { LoanDetailPage } from './pages/LoanDetailPage';
+import { LoraButton } from './components/LoraButton';
+import './styles/App.css';
 
 export default function App() {
   return (
     <BrowserRouter>
-      <div style={{ backgroundColor: 'white', minHeight: '100vh', color: 'var(--text)' }}>
+      <div style={{ backgroundColor: 'white', minHeight: '100vh', color: 'var(--text)', position: 'relative' }}>
         <Navbar />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/loan/:appId" element={<LoanDetailPage />} />
           <Route path="/create" element={<CreateLoanPage />} />
         </Routes>
+        <LoraButton />
       </div>
     </BrowserRouter>
   );
 }
+

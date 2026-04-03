@@ -16,6 +16,7 @@ CREATE_SELECTOR = algosdk.abi.Method.from_signature("create_loan(uint64,uint64,u
 FUND_SELECTOR = algosdk.abi.Method.from_signature("fund_loan(pay)void").get_selector()
 REPAY_SELECTOR = algosdk.abi.Method.from_signature("repay_loan(pay)void").get_selector()
 CLAIM_SELECTOR = algosdk.abi.Method.from_signature("claim_repayment()void").get_selector()
+GUARANTOR_SELECTOR = algosdk.abi.Method.from_signature("add_guarantor(account)void").get_selector()
 
 def encode_txns(txns: list) -> list[str]:
     """Base64 msgpack-encode a list of transactions."""

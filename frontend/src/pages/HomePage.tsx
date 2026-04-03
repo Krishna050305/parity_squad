@@ -1,26 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchLoans } from '../api';
+import { fetchLoans, parseGlobalState } from '../api';
 import { LoanCard } from '../components/LoanCard';
 import algosdk from 'algosdk';
-
-const parseGlobalState = (stateArray: any[]) => {
-    const state: any = {};
-    for (const item of stateArray) {
-        const key = atob(item.key);
-        if (item.value.type === 2) {
-            state[key] = item.value.uint;
-        } else if (item.value.type === 1 && item.value.bytes) {
-            const rawBytes = Uint8Array.from(atob(item.value.bytes), c => c.charCodeAt(0));
-            if (rawBytes.length === 32) {
-                state[key] = algosdk.encodeAddress(rawBytes);
-            } else {
-                state[key] = atob(item.value.bytes);
-            }
-        }
-    }
-    return state;
-};
 
 export const HomePage = () => {
     const [loans, setLoans] = useState<any[]>([]);

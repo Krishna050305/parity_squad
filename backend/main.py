@@ -12,7 +12,8 @@ from .transactions import (
     build_create_loan_txn,
     build_fund_loan_txns,
     build_repay_loan_txns,
-    build_claim_txn
+    build_claim_txn,
+    build_add_guarantor_txn
 )
 
 load_dotenv()
@@ -136,4 +137,14 @@ def route_repay_loan(req: RepayLoanRequest):
 @app.post("/loans/{app_id}/claim")
 def route_claim_loan(app_id: int, req: ClaimRequest):
     txns = build_claim_txn(req.lender_address, app_id)
+    return {"txns": txns}
+
+class AddGuarantorRequest(BaseModel):
+    borrower_address: str
+    app_id: int
+    guarantor_address: str
+
+@app.post("/loans/add_guarantor")
+def route_add_guarantor(req: AddGuarantorRequest):
+    txns = build_add_guarantor_txn(req.borrower_address, req.app_id, req.guarantor_address)
     return {"txns": txns}

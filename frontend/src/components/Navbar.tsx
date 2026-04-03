@@ -1,9 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { connectWallet, disconnectWallet } from '../wallet';
+import { calculateReputation } from '../api';
+import { TrustPathModal } from './TrustPathModal';
 
 export const Navbar = () => {
     const [address, setAddress] = useState<string | null>(localStorage.getItem("connectedAddress"));
+    const [reputation, setReputation] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (address) {
+            calculateReputation(address).then(setReputation);
+        } else {
+            setReputation(null);
+        }
+    }, [address]);
 
     const handleConnect = async () => {
         try {
@@ -19,7 +30,16 @@ export const Navbar = () => {
         setAddress(null);
     };
 
+    const getRepColor = (rep: number | null) => {
+        if (rep === null) return '#ccc';
+        if (rep > 70) return '#10b981'; // green
+        if (rep >= 40) return '#fbbf24'; // amber
+        return '#ef4444'; // red
+    };
+
     return (
+        <>
+        <TrustPathModal address={address} />
         <nav style={{ 
             background: 'var(--surface)', 
             padding: '1rem 4rem', 
@@ -48,7 +68,13 @@ export const Navbar = () => {
 
             <div>
                 {address ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                        {reputation !== null && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f3f4f6', padding: '0.25rem 0.75rem', borderRadius: '1rem' }}>
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: getRepColor(reputation) }}></div>
+                                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>Rep: {reputation}%</span>
+                            </div>
+                        )}
                         <span style={{ fontWeight: 600, color: 'var(--muted)' }}>
                             {address.slice(0, 5)}...{address.slice(-4)}
                         </span>
@@ -63,5 +89,6 @@ export const Navbar = () => {
                 )}
             </div>
         </nav>
+        </>
     );
 };
