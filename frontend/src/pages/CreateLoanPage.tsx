@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { createLoan } from '../api';
 import { signAndSendTxns } from '../wallet';
 import { TxBadge } from '../components/TxBadge';
+import { useSnackbar } from 'notistack';
 
 export const CreateLoanPage = () => {
     const [goal, setGoal] = useState<string>('');
@@ -13,6 +14,8 @@ export const CreateLoanPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successTxId, setSuccessTxId] = useState<string | null>(null);
+
+    const { enqueueSnackbar } = useSnackbar();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -44,10 +47,19 @@ export const CreateLoanPage = () => {
             });
 
             // Sign directly in the frontend using PeraWallet
-            const txId = await signAndSendTxns(txns);
+            const { txId } = await signAndSendTxns(txns);
             setSuccessTxId(txId);
+            enqueueSnackbar('Loan created successfully!', {
+                variant: 'success',
+                action: () => (
+                    <a href={`https://testnet.explorer.perawallet.app/tx/${txId}`} target="_blank" rel="noreferrer" style={{ color: 'white', textDecoration: 'underline', fontSize: '0.8rem' }}>
+                        View
+                    </a>
+                )
+            });
         } catch (err: any) {
             console.error("Failed to create loan:", err);
+            enqueueSnackbar(err.message || "Failed to create loan", { variant: 'error' });
             setError(err.message || "An error occurred. Make sure your wallet is connected and active.");
         } finally {
             setLoading(false);

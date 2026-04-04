@@ -35,7 +35,8 @@ from . import crud
 from .kyc import verify_email_otp, verify_phone_otp, hash_pan_aadhaar, get_tier_for_verification
 from .badge_minting import mint_tier_badge
 from .algorand_client import get_algod
-from .indexer import get_all_loans, get_loan_txns, get_wallet_history
+from .indexer import get_all_loans, get_loan_txns, get_wallet_history, get_loan_app_state
+from .chain_reader import get_all_chain_loans, sync_chain_to_db
 from .transactions import (
     build_create_loan_txn,
     build_fund_loan_txns,
@@ -267,6 +268,12 @@ def borrower_register(req: BorrowerRegisterRequest, db: Session = Depends(get_db
     }
 
 
+@app.get("/users/{wallet_address}/contributions")
+def get_user_contributions(wallet_address: str, db: Session = Depends(get_db)):
+    """Fetch all loans funded by this user."""
+    return crud.get_user_contributions(db, wallet_address)
+
+
 # ══════════════════════════════════════════════════════════════════
 #  LEGACY: KYC Verification (kept for backward compat)
 # ══════════════════════════════════════════════════════════════════
@@ -462,38 +469,44 @@ def decline_notification(notification_id: str, db: Session = Depends(get_db)):
 
 @app.get("/loans")
 def route_get_loans(
-    category: Optional[str] = Query(None, description="Filter by category"),
-    min_trust: Optional[int] = Query(None, description="Minimum trust score"),
-    status: Optional[int] = Query(None, description="Loan status (1=OPEN, 2=FUNDED, 3=REPAYING, 4=CLOSED, 5=DEFAULTED)"),
+    category: Optional[str] = Query(None),
+    min_trust: Optional[int] = Query(None),
+    status: Optional[int] = Query(None),
     db: Session = Depends(get_db),
 ):
-    """Get all loans with optional filters. Falls back to on-chain indexer."""
-    # Try DB first
-    db_loans = crud.get_loans(db, category=category, min_trust=min_trust, status=status)
-    if db_loans:
-        return {
-            "loans": [
-                {
-                    "id": str(loan.id),
-                    "app_id": loan.app_id,
-                    "borrower_wallet": loan.borrower.wallet_address if loan.borrower else None,
-                    "purpose": loan.purpose,
-                    "category": loan.category,
-                    "goal_microalgos": loan.goal_microalgos,
-                    "funded_microalgos": loan.funded_microalgos or 0,
-                    "status": loan.status,
-                    "tier_required": loan.tier_required or 0,
-                    "trust_path": loan.trust_path,
-                    "created_at": loan.created_at.isoformat() if loan.created_at else None,
-                    "borrower_trust": float(loan.borrower.trust_score or 50) if loan.borrower else 50,
-                }
-                for loan in db_loans
-            ]
-        }
+    """Get all loans - chain-first with DB fallback for metadata."""
+    # Try blockchain first via indexer
+    chain_loans = get_all_chain_loans(db, category=category)
+    if chain_loans:
+        # Filter by status/trust if needed (indexer filtering is basic)
+        result = chain_loans
+        if status:
+            result = [l for l in result if l["status"] == status]
+        if min_trust:
+            result = [l for l in result if l["borrower_trust"] >= min_trust]
+        return {"loans": result}
 
-    # Fallback to on-chain indexer
-    result = get_all_loans()
-    return result
+    # Fallback to DB if chain is empty/unavailable
+    db_loans = crud.get_loans(db, category=category, min_trust=min_trust, status=status)
+    return {
+        "loans": [
+            {
+                "id": str(loan.id),
+                "app_id": loan.app_id,
+                "borrower_wallet": loan.borrower.wallet_address if loan.borrower else None,
+                "purpose": loan.purpose,
+                "category": loan.category,
+                "goal_microalgos": loan.goal_microalgos,
+                "funded_microalgos": loan.funded_microalgos or 0,
+                "status": loan.status,
+                "tier_required": loan.tier_required or 0,
+                "trust_path": loan.trust_path,
+                "created_at": loan.created_at.isoformat() if loan.created_at else None,
+                "borrower_trust": float(loan.borrower.trust_score or 50) if loan.borrower else 50,
+            }
+            for loan in db_loans
+        ]
+    }
 
 
 @app.get("/loans/{app_id}/txns")
@@ -504,6 +517,9 @@ def route_get_loan_txns(app_id: int):
 @app.get("/loans/{app_id}/state")
 def route_get_loan_state(app_id: int, db: Session = Depends(get_db)):
     """Get loan state including metadata (guarantor, vouchers, schedule)."""
+    # Force sync from chain
+    sync_chain_to_db(app_id, db)
+
     # Try DB loan first
     db_loan = crud.get_loan_by_app_id(db, app_id)
 
@@ -584,6 +600,20 @@ def route_create_loan(req: CreateLoanRequest, db: Session = Depends(get_db)):
 
     return {"txns": txns, "metadata_id": app_id_placeholder, "loan_id": str(loan.id)}
 
+@app.post("/loans/{loan_id}/confirm")
+def route_confirm_loan(loan_id: str, app_id: int, db: Session = Depends(get_db)):
+    """Update loan in DB with real app_id after on-chain creation."""
+    loan = db.query(DBLoan).filter(DBLoan.id == loan_id).first()
+    if not loan:
+        lp_error(404, "NOT_FOUND", "Loan metadata not found.", "")
+    
+    loan.app_id = app_id
+    db.commit()
+    
+    # Sync immediately
+    sync_chain_to_db(app_id, db)
+    return {"status": "success", "app_id": app_id}
+
 
 @app.post("/loans/fund")
 def route_fund_loan(req: FundLoanRequest, db: Session = Depends(get_db)):
@@ -623,6 +653,10 @@ def route_repay_loan(req: RepayLoanRequest, db: Session = Depends(get_db)):
             db_loan.status = 4  # CLOSED
             db_loan.closed_at = datetime.utcnow()
         db.commit()
+    
+    # Sync chain to DB
+    if req.app_id:
+        sync_chain_to_db(req.app_id, db)
 
     return {"txns": txns}
 

@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { connectWallet, getConnectedAddress, signAndSendTxns } from '../wallet';
-import { createLoan } from '../api';
+import { createLoan, confirmLoanCreation } from '../api';
 import { TxBadge } from '../components/TxBadge';
+import { processOCR, loadFaceModels, detectFace } from '../ekyc';
+import { useSnackbar } from 'notistack';
 
 const TIERS = [
-  { level: 0, title: 'Tier 0: Basic', req: 'Wallet Pre-Validation', limit: 500, icon: '[W]' },
+  { level: 0, title: 'Tier 0: Basic', req: 'Basic Profile', limit: 500, icon: '[W]' },
   { level: 1, title: 'Tier 1: Verified Email', req: 'Email OTP', limit: 2000, icon: '[@]' },
   { level: 2, title: 'Tier 2: Verified Phone', req: 'Mobile OTP', limit: 5000, icon: '[#]' },
   { level: 3, title: 'Tier 3: Identity', req: 'Gov ID (Aadhaar/PAN)', limit: 20000, icon: '[ID]' },
@@ -69,22 +71,51 @@ export const AuthPage = () => {
   const [submittingLoan, setSubmittingLoan] = useState(false);
   const [successTxId, setSuccessTxId] = useState<string | null>(null);
 
+  const { enqueueSnackbar } = useSnackbar();
+
+  // e-KYC EXTRA STATE
+  const [ocrStatus, setOcrStatus] = useState<'IDLE' | 'PROCESSING' | 'SUCCESS' | 'ERROR'>('IDLE');
+  const [ocrError, setOcrError] = useState<string | null>(null);
+  const [faceMatchScore, setFaceMatchScore] = useState<number>(0);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+
   // Helper
   const activeLimit = targetTier !== null ? TIERS[targetTier].limit : 500;
 
   // LENDER / RETURNING BORROWER HANDLERS
-  const handleLenderLogin = () => {
+  const handleLenderLogin = async () => {
     if (!lenderName || !lenderOtp) return;
-    localStorage.setItem('lp_role', 'lender');
-    localStorage.setItem('lp_user', JSON.stringify({ name: lenderName }));
-    navigate('/lender/dashboard');
+    setProcessing(true);
+    try {
+      if (lenderOtp !== '1234') throw new Error('Invalid OTP');
+      
+      // Force Pera Wallet connection for Lenders
+      await connectWallet();
+      const addr = localStorage.getItem('connectedAddress');
+      if (!addr) throw new Error('Wallet connection failed');
+
+      localStorage.setItem('lp_role', 'lender');
+      localStorage.setItem('lp_user', JSON.stringify({ name: lenderName, mobile: lenderPhone, address: addr }));
+      enqueueSnackbar('Lender logged in successfully!', { variant: 'success' });
+      navigate('/lender/dashboard');
+    } catch (err: any) {
+      enqueueSnackbar(err.message || 'Login failed', { variant: 'error' });
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleReturningBorrower = () => {
     if (!returnId || !returnPwd) return;
-    localStorage.setItem('lp_role', 'borrower');
-    localStorage.setItem('lp_user', JSON.stringify({ walletPrefix: returnId }));
-    navigate('/borrower/dashboard');
+    try {
+        localStorage.setItem('lp_role', 'borrower');
+        localStorage.setItem('lp_user', JSON.stringify({ walletPrefix: returnId }));
+        enqueueSnackbar('Logged in successfully!', { variant: 'success' });
+        navigate('/borrower/dashboard');
+    } catch (err: any) {
+        enqueueSnackbar(err.message || 'Login failed', { variant: 'error' });
+    }
   };
 
   // STEP 1 HANDLERS
@@ -109,11 +140,13 @@ export const AuthPage = () => {
         await new Promise(r => setTimeout(r, 1000));
         setVerifiedTier(2);
       } else if (onboardingStep === 3) {
-        if (aadhaar.length < 12 && pan.length < 10) throw new Error('Provide Gov ID');
-        await new Promise(r => setTimeout(r, 1200));
+        // Step 1.3: Gov ID (Real OCR)
+        if (!aadhaar || !pan) throw new Error('Please complete OCR for both documents');
         setVerifiedTier(3);
       } else if (onboardingStep === 4) {
-        await new Promise(r => setTimeout(r, 1500));
+        // Step 1.4: Liveness (Face Detect)
+        if (faceMatchScore < 80) throw new Error('Face match confidence too low. Please try again.');
+        setIsCameraActive(false);
         setVerifiedTier(4);
       }
 
@@ -121,10 +154,58 @@ export const AuthPage = () => {
       if (targetTier !== null && onboardingStep < targetTier) {
         setOnboardingStep(prev => prev + 1);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       setProcessing(false);
-      alert('Verification failed. Check inputs.');
+      enqueueSnackbar(err.message || 'Verification failed. Check inputs.', { variant: 'error' });
+    }
+  };
+
+  const handleFileUpload = async (file: File, type: 'AADHAAR' | 'PAN') => {
+    setOcrStatus('PROCESSING');
+    try {
+      const result = await processOCR(file, type);
+      if (result.isValid && result.foundValue) {
+        if (type === 'AADHAAR') setAadhaar(result.foundValue);
+        else setPan(result.foundValue);
+        setOcrStatus('SUCCESS');
+      } else {
+        throw new Error(`Could not extract valid ${type} number`);
+      }
+    } catch (err: any) {
+      setOcrError(err.message);
+      setOcrStatus('ERROR');
+    }
+  };
+
+  const startLiveness = async () => {
+    setIsCameraActive(true);
+    setProcessing(true);
+    try {
+      await loadFaceModels();
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+        
+        const interval = setInterval(async () => {
+          if (!videoRef.current) {
+            clearInterval(interval);
+            return;
+          }
+          const score = await detectFace(videoRef.current);
+          setFaceMatchScore(score);
+          if (score > 90) {
+            // Auto-trigger verify if score is very high for 1s? 
+            // For now just let user click when they see green
+          }
+        }, 200);
+      }
+    } catch (err) {
+      console.error("Camera error:", err);
+      enqueueSnackbar("Could not start camera", { variant: 'error' });
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -139,7 +220,11 @@ export const AuthPage = () => {
       setFormError(`Amount exceeds your Tier limit of ${activeLimit} ALGO. Reduce amount or go back to upgrade tier.`);
       return;
     }
-    setMasterStep(4);
+    if (targetTier === 4) {
+      setMasterStep(4);
+    } else {
+      setMasterStep(5);
+    }
   };
 
   // STEP 4 HANDLER
@@ -150,9 +235,11 @@ export const AuthPage = () => {
         const addr = await connectWallet();
         await new Promise(r => setTimeout(r, 1200)); // Simulating on-chain ASA check
         setWalletAddress(addr);
+        enqueueSnackbar('Wallet connected!', { variant: 'success' });
         setMasterStep(5);
     } catch (err: any) {
-        setWalletError(err.message || 'Verification failed. Could not find corresponding ASA badge in wallet.');
+        enqueueSnackbar(err.message || 'Wallet connection failed', { variant: 'error' });
+        setWalletError(err.message || 'Connection failed.');
     } finally {
         setProcessing(false);
     }
@@ -174,19 +261,39 @@ export const AuthPage = () => {
           if (selectedPath === 'B') purposeText = `Guarantor: ${pathAPurpose}`;
           if (selectedPath === 'C') purposeText = `Self-raise: ${pathAPurpose}`;
 
-          const { txns } = await createLoan({
+          const { txns, loan_id } = await createLoan({
               borrower_address: walletAddress,
               goal_microalgos: goalMicroAlgos,
               duration_days: durationDays,
-              tier_required: targetTier || 0
+              tier_required: targetTier || 0,
+              purpose: purposeText,
+              category: 'other' // Default for now
           });
 
-          const txId = await signAndSendTxns(txns);
+          const { txId, appId } = await signAndSendTxns(txns);
           setSuccessTxId(txId);
 
-          // Note: Standard flow usually navigates, but user explicitly asked to show txId. 
+          enqueueSnackbar('Loan request broadcasted successfully!', { 
+            variant: 'success',
+            action: (key) => (
+              <a 
+                href={`https://testnet.explorer.perawallet.app/tx/${txId}`} 
+                target="_blank" 
+                rel="noreferrer"
+                style={{ color: 'white', textDecoration: 'underline', marginLeft: '10px', fontSize: '0.8rem' }}
+              >
+                View on Explorer
+              </a>
+            )
+          });
+
+          // Update DB with real app_id
+          if (appId && loan_id) {
+              await confirmLoanCreation(loan_id, appId);
+          }
       } catch(err: any) {
           console.error(err);
+          enqueueSnackbar(err.message || "Failed to deploy smart contract.", { variant: 'error' });
           setWalletError(err.message || "Failed to deploy smart contract.");
       } finally {
           setSubmittingLoan(false);
@@ -361,12 +468,43 @@ export const AuthPage = () => {
                                     {onboardingStep === 1 && <input className="form-input" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} />}
                                     {onboardingStep === 2 && <input className="form-input" placeholder="10-digit mobile" value={phone} onChange={e => setPhone(e.target.value)} />}
                                     {onboardingStep === 3 && (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                            <input className="form-input" placeholder="Aadhaar Array (12 digits)" value={aadhaar} onChange={e => setAadhaar(e.target.value)} />
-                                            <input className="form-input" placeholder="PAN Number" value={pan} onChange={e => setPan(e.target.value)} />
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                            <div className="ekyc-drop-zone" onClick={() => document.getElementById('aadhaar-file')?.click()}>
+                                                <div className="ekyc-drop-zone__icon">🪪</div>
+                                                <div className="ekyc-drop-zone__text">Upload Aadhaar Front Image</div>
+                                                <input id="aadhaar-file" type="file" hidden onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'AADHAAR')} />
+                                                {aadhaar && <div className="ocr-status ocr-status--success">Aadhaar: {aadhaar}</div>}
+                                            </div>
+
+                                            <div className="ekyc-drop-zone" onClick={() => document.getElementById('pan-file')?.click()}>
+                                                <div className="ekyc-drop-zone__icon">💳</div>
+                                                <div className="ekyc-drop-zone__text">Upload PAN Card Image</div>
+                                                <input id="pan-file" type="file" hidden onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'PAN')} />
+                                                {pan && <div className="ocr-status ocr-status--success">PAN: {pan}</div>}
+                                            </div>
+
+                                            {ocrStatus === 'PROCESSING' && <div className="ocr-status ocr-status--pending">AI Scanning Documents...</div>}
+                                            {ocrError && <div className="ocr-status ocr-status--error">{ocrError}</div>}
                                         </div>
                                     )}
-                                    {onboardingStep === 4 && <p style={{ fontSize: '0.9rem', color: 'var(--lp-slate-light)' }}>Requesting multsig vouch approval from 2 verified members. (Simulation)</p>}
+                                    {onboardingStep === 4 && (
+                                        <div style={{ textAlign: 'center' }}>
+                                            {!isCameraActive ? (
+                                                <div style={{ padding: '2rem', border: '2px dashed var(--lp-border)', borderRadius: 'var(--radius-lg)' }}>
+                                                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🤳</div>
+                                                    <p style={{ marginBottom: '1.5rem', color: 'var(--lp-slate-muted)' }}>Face Verification required for Tier 4.</p>
+                                                    <button className="btn btn-outline" onClick={startLiveness}>Start Camera</button>
+                                                </div>
+                                            ) : (
+                                                <div className="camera-container">
+                                                    <video ref={videoRef} className="camera-video" muted playsInline />
+                                                    <div className="match-score-badge" style={{ color: faceMatchScore > 80 ? '#4ade80' : 'white' }}>
+                                                        Detecting: {faceMatchScore}%
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                                 <button className="btn btn-gold" style={{ width: '100%' }} onClick={handleNextTierStep} disabled={processing}>
                                     {processing ? 'Processing...' : `Complete Verification`}
@@ -479,10 +617,16 @@ export const AuthPage = () => {
                         </div>
 
                         {walletError && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '12px', borderRadius: '4px', fontSize: '0.85rem' }}>{walletError}</div>}
-
-                        <button className="btn btn-primary btn-lg" onClick={handleFinalSubmit} disabled={submittingLoan} style={{ marginTop: '16px' }}>
-                            {submittingLoan ? 'Signing & Broadcasting...' : 'Submit Loan Request on Chain'}
-                        </button>
+                        
+                        {!walletAddress ? (
+                            <button className="btn btn-gold btn-lg" onClick={handlePerformWalletConnect} disabled={processing} style={{ marginTop: '16px', width: '100%' }}>
+                                {processing ? 'Connecting Pera...' : 'Connect Wallet to Submit'}
+                            </button>
+                        ) : (
+                            <button className="btn btn-primary btn-lg" onClick={handleFinalSubmit} disabled={submittingLoan} style={{ marginTop: '16px', width: '100%' }}>
+                                {submittingLoan ? 'Signing & Broadcasting...' : 'Submit Loan Request on Chain'}
+                            </button>
+                        )}
                     </div>
                 )}
 

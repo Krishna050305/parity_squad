@@ -7,9 +7,12 @@
 
 import { PeraWalletConnect } from '@perawallet/connect';
 import * as algokit from '@algorandfoundation/algokit-utils';
+import algosdk from 'algosdk';
 
 // ── Pera instance for signing ───────────────────────────────────
-const peraWallet = new PeraWalletConnect();
+const peraWallet = new PeraWalletConnect({
+    chainId: 416002 // 416002 is Algorand TestNet
+});
 
 // ── Algod client (localnet config) ──────────────────────────────
 const algodServer = import.meta.env.VITE_ALGOD_SERVER || 'http://localhost';
@@ -54,27 +57,31 @@ export const getConnectedAddress = (): string | null => {
 };
 
 // ── Sign and send transactions (Pera signing) ───────────────────
-export const signAndSendTxns = async (encodedTxns: string[]): Promise<string> => {
-  // Decode base64 msgpack txns back to Uint8Array expected by Pera
+export const signAndSendTxns = async (encodedTxns: string[]): Promise<{ txId: string; appId?: number }> => {
+  // Decode base64 msgpack txns back to Transaction object expected by Pera
   const txnsToSign = encodedTxns.map((enc) => {
     const binary = atob(enc);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
+        bytes[i] = binary.charCodeAt(i);
     }
-    return { txn: bytes };
+    // Decode into native algosdk.Transaction object
+    const decodedTxn = algosdk.decodeUnsignedTransaction(bytes);
+    return { txn: decodedTxn, signers: [decodedTxn.sender.toString()] };
   });
 
   // Sign txns via Pera
   const signedTxns = await peraWallet.signTransaction([txnsToSign]);
 
   // Send raw transaction
-  const { txId } = await algodClient.sendRawTransaction(signedTxns).do();
+  const response: any = await algodClient.sendRawTransaction(signedTxns).do();
+  const txId = response.txId || response.txid;
 
   // Wait for confirmation
-  await algokit.waitForConfirmation(txId, 4, algodClient);
+  const confirmation = await algokit.waitForConfirmation(txId, 4, algodClient);
+  const appId = (confirmation as any)['application-index'];
 
-  return txId;
+  return { txId, appId };
 };
 
 // ── Reconnect on page load ──────────────────────────────────────

@@ -374,6 +374,36 @@ def record_contribution(
     return contrib
 
 
+def get_user_contributions(db: Session, wallet: str) -> list[dict]:
+    """Fetch all contributions made by a lender wallet."""
+    user = get_user_by_wallet(db, wallet)
+    if not user:
+        return []
+    
+    contributions = (
+        db.query(LenderContribution)
+        .filter(LenderContribution.lender_id == user.id)
+        .all()
+    )
+    
+    results = []
+    for c in contributions:
+        loan = c.loan
+        borrower = loan.borrower
+        results.append({
+            "loan_id": str(loan.id),
+            "app_id": loan.app_id,
+            "borrower_name": borrower.name,
+            "amount_microalgos": c.amount_microalgos,
+            "contributed_at": c.contributed_at.isoformat(),
+            "status": loan.status, # 1=OPEN, 2=FUNDED, 3=REPAYING, 4=CLOSED
+            "goal_microalgos": loan.goal_microalgos,
+            "funded_microalgos": loan.funded_microalgos,
+            "txn_id": c.txn_id,
+        })
+    return results
+
+
 # ══════════════════════════════════════════════════════════════════
 #  NOTIFICATIONS
 # ══════════════════════════════════════════════════════════════════
