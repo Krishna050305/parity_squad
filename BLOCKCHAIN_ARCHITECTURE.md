@@ -12,6 +12,8 @@ LendPool leverages Algorand for several critical reasons specifically tailored f
 - **Atomic Transfers:** Algorand's built-in transaction grouping mechanism guarantees that either all parts of a transaction execute correctly, or none do.
 - **Algorand Standard Assets (ASAs):** Used efficiently for Minting Tier/Trust Badges.
 
+*Note: As of the latest deployment, the smart contracts have been migrated from localized Docker environments (LocalNet) to the live public Algorand TestNet, meaning live global consensus, real Algorand relay nodes, and TestNet ALGO are utilized.*
+
 ---
 
 ## 2. Smart Contract State Management
@@ -83,6 +85,16 @@ The python `ARC4Contract` defines the exact lifecycle of the lending process:
 ### Phase 5: Risk Adjustments (`add_guarantor` & `mark_default`)
 - The borrower can assign a `guarantor` address while the loan is OPEN to lower risk for lenders.
 - Anyone can call `mark_default` if `status == 3 (REPAYING)` and the `deadline` timestamp has passed. This explicitly forces the status to **5 (DEFAULTED)** for the indexer and community scoring systems to detect.
+
+---
+
+## 5. Hybrid Architecture: Integrating Machine Learning (Off-Chain)
+
+While money logistics and state consensus are strictly enforced on-chain via the Application instances above, LendPool relies on a dynamic hybrid architecture to determine lending limits and trust values dynamically:
+
+- **ML Trust Scoring:** Off-chain, the FastAPI backend calculates a dynamic Trust Score (0-1000) using a scikit-learn RandomForest model (`lendpool_trust_model.pkl`).
+- **Feature Pipeline:** The ML service feeds on historical blockchain telemetry and behavioral metrics (e.g., successful repayment ratios on closed loans, average days late, KYC tier) to output this score.
+- **Interaction:** The smart contract blindly trusts the `tier_required` variables negotiated off-chain, delegating the heavy computation of behavioral trust scoring to the AI pipeline while the blockchain strictly handles execution enforcement and transparent record keeping.
 
 ---
 

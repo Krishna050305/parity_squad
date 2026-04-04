@@ -11,16 +11,20 @@ import * as algokit from '@algorandfoundation/algokit-utils';
 // ── Pera instance for signing ───────────────────────────────────
 const peraWallet = new PeraWalletConnect();
 
-// ── Algod client (localnet config) ──────────────────────────────
+// ── Algod client (network-aware config) ─────────────────────────
 const algodServer = import.meta.env.VITE_ALGOD_SERVER || 'http://localhost';
-const algodPort = import.meta.env.VITE_ALGOD_PORT || '4001';
+const algodPort = import.meta.env.VITE_ALGOD_PORT || '';
 const algodToken = import.meta.env.VITE_ALGOD_TOKEN || 'a'.repeat(64);
 
-const algodClient = algokit.getAlgoClient({
+const algodConfig: { server: string; token: string; port?: string | number } = {
   server: algodServer,
-  port: algodPort,
   token: algodToken,
-});
+};
+if (algodPort) {
+  algodConfig.port = algodPort;
+}
+
+const algodClient = algokit.getAlgoClient(algodConfig);
 
 // ── Connect wallet (Pera direct approach) ───────────────────────
 export const connectWallet = async (): Promise<string> => {
@@ -55,21 +59,29 @@ export const getConnectedAddress = (): string | null => {
 
 // ── Sign and send transactions (Pera signing) ───────────────────
 export const signAndSendTxns = async (encodedTxns: string[]): Promise<string> => {
-  // Decode base64 msgpack txns back to Uint8Array expected by Pera
+  // Decode base64 msgpack txns back to Transaction objects
+  const algosdk = await import('algosdk');
+
   const txnsToSign = encodedTxns.map((enc) => {
+    // msgpack_encode from Python SDK returns base64; decode to raw bytes
     const binary = atob(enc);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
       bytes[i] = binary.charCodeAt(i);
     }
-    return { txn: bytes };
+    // Decode the msgpack bytes into an algosdk Transaction object
+    const txn = algosdk.decodeUnsignedTransaction(bytes);
+    return { txn };
   });
 
   // Sign txns via Pera
   const signedTxns = await peraWallet.signTransaction([txnsToSign]);
 
-  // Send raw transaction
-  const { txId } = await algodClient.sendRawTransaction(signedTxns).do();
+  // Send raw signed transaction(s)
+  const response = await algodClient.sendRawTransaction(signedTxns).do();
+
+  // algosdk v3: response has .txid or .txId depending on version
+  const txId = (response as any).txId || (response as any).txid || response.toString();
 
   // Wait for confirmation
   await algokit.waitForConfirmation(txId, 4, algodClient);

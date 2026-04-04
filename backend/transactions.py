@@ -20,7 +20,8 @@ GUARANTOR_SELECTOR = algosdk.abi.Method.from_signature("add_guarantor(address)vo
 
 def encode_txns(txns: list) -> list[str]:
     """Base64 msgpack-encode a list of transactions."""
-    return [base64.b64encode(algosdk.encoding.msgpack_encode(txn)).decode("utf-8") for txn in txns]
+    # algosdk.encoding.msgpack_encode() already returns a base64 string
+    return [algosdk.encoding.msgpack_encode(txn) for txn in txns]
 
 def get_approval_clear_programs():
     path = os.path.join(os.path.dirname(__file__), '..', 'smart_contracts', 'artifacts', 'loan_contract', 'LoanContract.arc56.json')
