@@ -13,7 +13,9 @@ export const AuthGuard = ({ role, children }: AuthGuardProps) => {
   
   useEffect(() => {
     if (!address || !storedRole) {
-      navigate('/auth', { replace: true });
+      // Preserve intended role when redirected to login
+      const redirectRole = role === 'any' ? (storedRole || 'lender') : role;
+      navigate(`/auth?role=${redirectRole}`, { replace: true });
       return;
     }
     if (role !== 'any' && storedRole !== role) {

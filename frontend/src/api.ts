@@ -8,20 +8,40 @@ import algosdk from 'algosdk';
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 const headers = { 'Content-Type': 'application/json' };
+
+const get = async (url: string) => {
+  let response;
+  try {
+    response = await fetch(url);
+  } catch (err) {
+    console.error(`[NETWORK ERROR] ${url}:`, err);
+    throw new Error("Backend server is not running. Please start the backend or check your connection.");
+  }
+  if (!response.ok) {
+    console.warn(`[API GET ERROR] ${url}: Status ${response.status}`);
+    throw new Error(`API error: ${response.status}`);
+  }
+  return response.json();
+};
+
 const post = async (url: string, body: object) => {
-  const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+  let response;
+  try {
+    response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+  } catch (err) {
+    console.error(`[NETWORK ERROR] ${url}:`, err);
+    throw new Error("Backend server is not running. Please start the backend or check your connection.");
+  }
   if (!response.ok) {
     const errorText = await response.text();
+    console.warn(`[API POST ERROR] ${url}: Status ${response.status}`, errorText);
     throw new Error(`Backend error (${response.status}): ${errorText}`);
   }
   return response.json();
 };
 
 export const getUserContributions = (wallet: string) =>
-  fetch(`${BASE_URL}/users/${wallet}/contributions`).then(r => {
-    if (!r.ok) throw new Error(`Failed to fetch contributions: ${r.status}`);
-    return r.json();
-  });
+  get(`${BASE_URL}/users/${wallet}/contributions`);
 
 // ══════════════════════════════════════════════════════════════════
 //  AUTH & USER MANAGEMENT
@@ -45,11 +65,7 @@ export const borrowerRegister = (params: {
 // ══════════════════════════════════════════════════════════════════
 
 export const getCommunityVouchers = () =>
-  fetch(`${BASE_URL}/community/vouchers`).then(r => {
-    if (!r.ok) throw new Error(`API error: ${r.status}`);
-    return r.json();
-  })
-;
+  get(`${BASE_URL}/community/vouchers`);
 
 export const submitVouchPayment = (borrowerAddress: string, voucherAddress: string) =>
   post(`${BASE_URL}/community/vouch-payment`, {
@@ -70,11 +86,7 @@ export const requestGuarantor = (borrowerAddress: string, guarantorAddress: stri
 // ══════════════════════════════════════════════════════════════════
 
 export const getNotifications = (walletAddress: string) =>
-  fetch(`${BASE_URL}/notifications/${walletAddress}`).then(r => {
-    if (!r.ok) throw new Error(`API error: ${r.status}`);
-    return r.json();
-  })
-;
+  get(`${BASE_URL}/notifications/${walletAddress}`);
 
 export const approveGuarantorRequest = (notificationId: string, guarantorAddress: string) =>
   post(`${BASE_URL}/notifications/${notificationId}/approve`, {
@@ -82,11 +94,7 @@ export const approveGuarantorRequest = (notificationId: string, guarantorAddress
   });
 
 export const declineGuarantorRequest = (notificationId: string) =>
-  fetch(`${BASE_URL}/notifications/${notificationId}/decline`, { method: 'POST' }).then(r => {
-    if (!r.ok) throw new Error(`API error: ${r.status}`);
-    return r.json();
-  })
-;
+  post(`${BASE_URL}/notifications/${notificationId}/decline`, {});
 
 // ══════════════════════════════════════════════════════════════════
 //  LOANS (existing + enhanced)
@@ -102,26 +110,14 @@ export const fetchLoans = (filters?: {
   if (filters?.min_trust) params.set('min_trust', String(filters.min_trust));
   if (filters?.status) params.set('status', String(filters.status));
   const qs = params.toString();
-  return fetch(`${BASE_URL}/loans${qs ? `?${qs}` : ''}`).then(r => {
-    if (!r.ok) throw new Error(`API error: ${r.status}`);
-    return r.json();
-  })
-;
+  return get(`${BASE_URL}/loans${qs ? `?${qs}` : ''}`);
 };
 
 export const fetchLoanState = (appId: number) =>
-  fetch(`${BASE_URL}/loans/${appId}/state`).then(r => {
-    if (!r.ok) throw new Error(`API error: ${r.status}`);
-    return r.json();
-  })
-;
+  get(`${BASE_URL}/loans/${appId}/state`);
 
 export const fetchLoanTxns = (appId: number) =>
-  fetch(`${BASE_URL}/loans/${appId}/txns`).then(r => {
-    if (!r.ok) throw new Error(`API error: ${r.status}`);
-    return r.json();
-  })
-;
+  get(`${BASE_URL}/loans/${appId}/txns`);
 
 export const createLoan = (params: {
   borrower_address: string;
@@ -138,11 +134,7 @@ export const createLoan = (params: {
 }) => post(`${BASE_URL}/loans/create`, params);
 
 export const confirmLoanCreation = (loanId: string, appId: number) =>
-  fetch(`${BASE_URL}/loans/${loanId}/confirm?app_id=${appId}`, { method: 'POST' }).then(r => {
-    if (!r.ok) throw new Error(`API error: ${r.status}`);
-    return r.json();
-  })
-;
+  post(`${BASE_URL}/loans/${loanId}/confirm?app_id=${appId}`, {});
 
 export const fundLoan = (params: {
   lender_address: string;
@@ -183,11 +175,7 @@ export const createInstallmentSchedule = (
 ) => post(`${BASE_URL}/loans/${appId}/schedule`, params);
 
 export const getInstallmentSchedule = (appId: number) =>
-  fetch(`${BASE_URL}/loans/${appId}/schedule`).then(r => {
-    if (!r.ok) throw new Error(`API error: ${r.status}`);
-    return r.json();
-  })
-;
+  get(`${BASE_URL}/loans/${appId}/schedule`);
 
 export const payInstallment = (appId: number, installmentNo: number, borrowerAddress: string) =>
   post(`${BASE_URL}/loans/${appId}/installment/${installmentNo}/pay`, {
@@ -202,18 +190,10 @@ export const generateReceipt = (appId: number) =>
   post(`${BASE_URL}/loans/${appId}/generate-receipt`, { app_id: appId });
 
 export const getUserReceipts = (walletAddress: string) =>
-  fetch(`${BASE_URL}/users/${walletAddress}/receipts`).then(r => {
-    if (!r.ok) throw new Error(`API error: ${r.status}`);
-    return r.json();
-  })
-;
+  get(`${BASE_URL}/users/${walletAddress}/receipts`);
 
 export const getUserProfile = (walletAddress: string) =>
-  fetch(`${BASE_URL}/users/${walletAddress}/profile`).then(r => {
-    if (!r.ok) throw new Error(`API error: ${r.status}`);
-    return r.json();
-  })
-;
+  get(`${BASE_URL}/users/${walletAddress}/profile`);
 
 // ══════════════════════════════════════════════════════════════════
 //  REMINDERS & SCORES
@@ -233,11 +213,7 @@ export const updateScore = (walletAddress: string, eventType: string) =>
 // ══════════════════════════════════════════════════════════════════
 
 export const healthCheck = () =>
-  fetch(`${BASE_URL}/health`).then(r => {
-    if (!r.ok) throw new Error(`API error: ${r.status}`);
-    return r.json();
-  })
-;
+  get(`${BASE_URL}/health`);
 
 // ══════════════════════════════════════════════════════════════════
 //  UTILITIES (kept from original)

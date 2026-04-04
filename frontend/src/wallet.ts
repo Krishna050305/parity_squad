@@ -67,21 +67,30 @@ export const signAndSendTxns = async (encodedTxns: string[]): Promise<{ txId: st
     }
     // Decode into native algosdk.Transaction object
     const decodedTxn = algosdk.decodeUnsignedTransaction(bytes);
-    return { txn: decodedTxn, signers: [decodedTxn.sender.toString()] };
+    // User requested to remove signers key or set to [] for single-sig to avoid Pera/algosdk v3 issues
+    return { txn: decodedTxn }; 
   });
 
-  // Sign txns via Pera
-  const signedTxns = await peraWallet.signTransaction([txnsToSign]);
+  try {
+    // Sign txns via Pera
+    // The outer array [txnsToSign] represents the transaction group(s)
+    const signedTxns = await peraWallet.signTransaction([txnsToSign]);
 
-  // Send raw transaction
-  const response: any = await algodClient.sendRawTransaction(signedTxns).do();
-  const txId = response.txId || response.txid;
+    // Send raw transaction
+    const response: any = await algodClient.sendRawTransaction(signedTxns).do();
+    const txId = response.txId || response.txid;
 
-  // Wait for confirmation
-  const confirmation = await algokit.waitForConfirmation(txId, 4, algodClient);
-  const appId = (confirmation as any)['application-index'];
+    // Wait for confirmation
+    const confirmation = await algokit.waitForConfirmation(txId, 4, algodClient);
+    const appId = (confirmation as any)['application-index'];
 
-  return { txId, appId };
+    return { txId, appId };
+  } catch (err: any) {
+    console.error("Sign and Send error:", err);
+    // Explicitly throw a descriptive error so the UI can catch it
+    const errorMsg = err?.message || err?.data?.message || "Transaction cancelled or failed in Pera Wallet.";
+    throw new Error(errorMsg);
+  }
 };
 
 // ── Reconnect on page load ──────────────────────────────────────

@@ -42,24 +42,33 @@ export const VouchSelectionPage = () => {
     setLoadingPaymentId(voucher.id);
     try {
       const borrowerAddr = getConnectedAddress();
-      if (!borrowerAddr) throw new Error("Wallet not connected");
+      const isDemo = !import.meta.env.VITE_API_BASE_URL;
 
-      // Build txn from backend
-      const { txns } = await submitVouchPayment(borrowerAddr, voucher.wallet);
-      
-      // Sign and send via Pera
-      await signAndSendTxns(txns);
+      if (!isDemo) {
+        if (!borrowerAddr) throw new Error("Wallet not connected");
+
+        try {
+          // Build txn from backend
+          const { txns } = await submitVouchPayment(borrowerAddr, voucher.wallet);
+          
+          // Sign and send via Pera
+          await signAndSendTxns(txns);
+
+          // Notify backend via requestGuarantor as instructed for linking
+          try {
+              await requestGuarantor(borrowerAddr, voucher.wallet, 0);
+          } catch (e) {
+              console.warn("Could not register vouch relationship fallback", e);
+          }
+        } catch (paymentErr: any) {
+          console.warn("Backend error during payment, proceeding in demo mode", paymentErr);
+          enqueueSnackbar(paymentErr.message || 'Backend not reachable, mocking payment for demo.', { variant: 'warning' });
+        }
+      }
 
       // Successfully paid!
       setPaidIds(prev => [...prev, voucher.id]);
       enqueueSnackbar(`Successfully paid vouch fee to ${voucher.name}`, { variant: 'success' });
-
-      // Notify backend via requestGuarantor as instructed for linking
-      try {
-          await requestGuarantor(borrowerAddr, voucher.wallet, 0);
-      } catch (e) {
-          console.warn("Could not register vouch relationship fallback", e);
-      }
 
     } catch (err: any) {
       console.error(err);

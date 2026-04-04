@@ -21,8 +21,12 @@ import { SnackbarProvider } from 'notistack';
 const RootRedirect = () => {
     const role = localStorage.getItem('lp_role');
     const address = localStorage.getItem('connectedAddress');
+    
+    // If authenticated, go to dashboard
     if (role === 'lender' && address) return <Navigate to="/lender/home" replace />;
     if (role === 'borrower' && address) return <Navigate to="/borrower/dashboard" replace />;
+    
+    // Otherwise show landing
     return <LandingPage />;
 };
 

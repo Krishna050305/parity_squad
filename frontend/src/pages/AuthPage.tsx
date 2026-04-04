@@ -111,6 +111,8 @@ export const AuthPage = () => {
     try {
         localStorage.setItem('lp_role', 'borrower');
         localStorage.setItem('lp_user', JSON.stringify({ walletPrefix: returnId }));
+        // Ensure connectedAddress is set for the Guard and other parts of the app
+        localStorage.setItem('connectedAddress', returnId);
         enqueueSnackbar('Logged in successfully!', { variant: 'success' });
         navigate('/borrower/dashboard');
     } catch (err: any) {
@@ -235,8 +237,21 @@ export const AuthPage = () => {
         const addr = await connectWallet();
         await new Promise(r => setTimeout(r, 1200)); // Simulating on-chain ASA check
         setWalletAddress(addr);
+        
+        // Register borrower state globally so AuthGuard doesn't aggressively kick us out on navigate
+        localStorage.setItem('lp_role', 'borrower');
+        localStorage.setItem('connectedAddress', addr);
+        localStorage.setItem('lp_user', JSON.stringify({ name: email || 'New Borrower', address: addr, tier: targetTier }));
+
         enqueueSnackbar('Wallet connected!', { variant: 'success' });
-        setMasterStep(5);
+        
+        // If they haven't chosen a path yet (onboarding), go to Step 2
+        // If they were already in the summary flow, go to Step 5
+        if (!selectedPath) {
+          setMasterStep(2);
+        } else {
+          setMasterStep(5);
+        }
     } catch (err: any) {
         enqueueSnackbar(err.message || 'Wallet connection failed', { variant: 'error' });
         setWalletError(err.message || 'Connection failed.');
@@ -458,9 +473,10 @@ export const AuthPage = () => {
                                 <p style={{ color: 'var(--lp-slate-muted)' }}>You successfully proved your identity for Tier {targetTier}.</p>
                                 <button className="btn btn-primary btn-lg" style={{ marginTop: '24px', width: '100%' }} onClick={() => {
                                     localStorage.setItem('lp_tier', targetTier.toString());
-                                    setMasterStep(2);
+                                    // Move wallet connect before path selection to satisfy AuthGuard
+                                    setMasterStep(4);
                                 }}>
-                                    Continue to Loan Path →
+                                    Continue to Wallet Setup →
                                 </button>
                             </div>
                         ) : (
