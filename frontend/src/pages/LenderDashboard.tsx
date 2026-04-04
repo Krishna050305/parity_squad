@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   categories, borrowerProfiles, demoLenderActivity,
@@ -6,10 +6,32 @@ import {
   type Category,
 } from '../data';
 
+import { getUserContributions } from '../api';
+
 export const LenderDashboard = () => {
   const [filterCategory, setFilterCategory] = useState<Category | 'all'>('all');
   const [filterTrustMin, setFilterTrustMin] = useState(0);
   const [sortBy, setSortBy] = useState<'trust-high' | 'funding-low' | 'amount'>('trust-high');
+
+  const [loading, setLoading] = useState(true);
+  const [contributions, setContributions] = useState<any[]>([]);
+  const connectedAddress = localStorage.getItem('connectedAddress');
+
+  useEffect(() => {
+    if (connectedAddress) {
+      getUserContributions(connectedAddress)
+        .then(data => {
+          setContributions(Array.isArray(data) ? data : []);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
+  }, [connectedAddress]);
 
   const filteredProfiles = useMemo(() => {
     let result = borrowerProfiles.filter(p => p.trustScore >= filterTrustMin);
@@ -22,20 +44,32 @@ export const LenderDashboard = () => {
     return result;
   }, [filterCategory, filterTrustMin, sortBy]);
 
-  // Mock portfolio data
-  const portfolio = {
-    totalLent: 45000,
-    activeLoans: 4,
-    expectedReturns: 48600,
-    repaidToDate: 28500,
-  };
+  // Derive portfolio from contributions
+  const portfolio = useMemo(() => {
+    const safeContribs = Array.isArray(contributions) ? contributions : [];
+    const total = safeContribs.reduce((sum, c) => sum + (c.amount_microalgos || 0), 0) / 1e6;
+    const active = safeContribs.filter(c => c.status !== 4).length; // status 4 is CLOSED
+    return {
+      totalLent: total * 100, // INR (approx)
+      totalLentAlgo: total,
+      activeLoans: active,
+      expectedReturns: total * 1.08 * 100, // 8% interest mock
+      repaidToDate: 0,
+    };
+  }, [contributions]);
 
-  const fundedLoans = [
-    { borrower: 'Ramesh Patel', amount: 5000, date: '10 Jan 2025', status: 'REPAYING', nextRepay: '15 May 2025', expectedReturn: 5400 },
-    { borrower: 'Ananya Mishra', amount: 3000, date: '22 Feb 2025', status: 'REPAYING', nextRepay: '22 May 2025', expectedReturn: 3240 },
-    { borrower: 'Rohit Agarwal', amount: 8000, date: '5 Mar 2025', status: 'FUNDED', nextRepay: '5 Jun 2025', expectedReturn: 8640 },
-    { borrower: 'Kiran Rao', amount: 4000, date: '15 Dec 2024', status: 'CLOSED', nextRepay: '—', expectedReturn: 4320 },
-  ];
+  const fundedLoans = useMemo(() => {
+    const safeContribs = Array.isArray(contributions) ? contributions : [];
+    return safeContribs.map(c => ({
+      borrower: c.borrower_name,
+      amount: (c.amount_microalgos / 1e6) * 100, // INR
+      amountAlgo: c.amount_microalgos / 1e6,
+      date: new Date(c.contributed_at).toLocaleDateString(),
+      status: c.status === 1 ? 'OPEN' : c.status === 2 ? 'FUNDED' : c.status === 3 ? 'REPAYING' : 'CLOSED',
+      nextRepay: c.status === 3 ? 'Upcoming' : '—',
+      expectedReturn: (c.amount_microalgos / 1e6) * 1.08 * 100,
+    }));
+  }, [contributions]);
 
   return (
     <div style={{ minHeight: 'calc(100vh - 68px)', background: 'var(--lp-ivory)', padding: 'var(--space-2xl) var(--space-xl)' }}>

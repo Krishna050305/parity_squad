@@ -10,6 +10,7 @@ export interface BorrowerProfile {
   trustScore: number;
   lenderCount: number;
   category: Category;
+  wallet: string;        // Algorand address
 }
 
 export type Category = 'agriculture' | 'medical' | 'education' | 'housing' | 'business';
@@ -31,32 +32,13 @@ export const categories: CategoryInfo[] = [
 
 export const borrowerProfiles: BorrowerProfile[] = [
   // ── Agriculture ──
-  { id: 'agr-1', name: 'Ramesh Patel',           state: 'Gujarat',          amount: 18000, reason: 'Drip irrigation system',       fundedPct: 78, trustScore: 82, lenderCount: 3, category: 'agriculture' },
-  { id: 'agr-2', name: 'Sunita Devi',            state: 'Bihar',            amount: 12000, reason: 'Seed & fertilizer stock',      fundedPct: 45, trustScore: 71, lenderCount: 2, category: 'agriculture' },
-  { id: 'agr-3', name: 'Kiran Rao',              state: 'Andhra Pradesh',   amount: 25000, reason: 'Tractor rental deposit',       fundedPct: 91, trustScore: 88, lenderCount: 5, category: 'agriculture' },
-  { id: 'agr-4', name: 'Mohammed Yusef',         state: 'Rajasthan',        amount: 9500,  reason: 'Goat farming expansion',       fundedPct: 20, trustScore: 65, lenderCount: 1, category: 'agriculture' },
+  { id: 'agr-1', name: 'Ramesh Patel',           state: 'Gujarat',          amount: 18000, reason: 'Drip irrigation system',       fundedPct: 78, trustScore: 82, lenderCount: 3, category: 'agriculture', wallet: 'RAMESHPATEL6X2Y...Z' },
   // ── Medical ──
-  { id: 'med-1', name: 'Priya Nair',             state: 'Kerala',           amount: 30000, reason: "Father's cataract surgery",    fundedPct: 60, trustScore: 90, lenderCount: 7, category: 'medical' },
-  { id: 'med-2', name: 'Arvind Gupta',           state: 'MP',               amount: 22000, reason: 'Diabetes medication 6mo',      fundedPct: 33, trustScore: 74, lenderCount: 3, category: 'medical' },
-  { id: 'med-3', name: 'Fatima Shaikh',          state: 'Maharashtra',      amount: 15000, reason: 'Child physiotherapy',          fundedPct: 88, trustScore: 85, lenderCount: 4, category: 'medical' },
-  { id: 'med-4', name: 'Deepak Sharma',          state: 'UP',               amount: 40000, reason: 'Knee replacement surgery',     fundedPct: 12, trustScore: 61, lenderCount: 1, category: 'medical' },
+  { id: 'med-1', name: 'Priya Nair',             state: 'Kerala',           amount: 30000, reason: "Father's cataract surgery",    fundedPct: 60, trustScore: 90, lenderCount: 7, category: 'medical', wallet: 'PRIYANAIR2X4Y...Z' },
   // ── Education ──
-  { id: 'edu-1', name: 'Ananya Mishra',          state: 'Odisha',           amount: 8000,  reason: 'UPSC coaching fees',           fundedPct: 95, trustScore: 93, lenderCount: 9, category: 'education' },
-  { id: 'edu-2', name: 'Raju Verma',             state: 'Jharkhand',        amount: 14000, reason: 'ITI welding course',           fundedPct: 67, trustScore: 79, lenderCount: 5, category: 'education' },
-  { id: 'edu-3', name: 'Pooja Iyer',             state: 'TN',               amount: 20000, reason: 'Nursing entrance exam prep',   fundedPct: 40, trustScore: 76, lenderCount: 3, category: 'education' },
-  { id: 'edu-4', name: 'Sanjay Das',             state: 'West Bengal',      amount: 11000, reason: 'Computer hardware diploma',    fundedPct: 22, trustScore: 68, lenderCount: 2, category: 'education' },
-  { id: 'edu-5', name: 'Meena Kumari',           state: 'Haryana',          amount: 16000, reason: 'B.Ed admission fees',          fundedPct: 55, trustScore: 80, lenderCount: 4, category: 'education' },
-  // ── Housing ──
-  { id: 'hou-1', name: 'Vikram Singh',           state: 'Punjab',           amount: 35000, reason: 'Roof repair before monsoon',   fundedPct: 70, trustScore: 84, lenderCount: 6, category: 'housing' },
-  { id: 'hou-2', name: 'Geeta Yadav',            state: 'UP',               amount: 18000, reason: 'Kitchen renovation',           fundedPct: 38, trustScore: 72, lenderCount: 2, category: 'housing' },
-  { id: 'hou-3', name: 'Abdul Karim',            state: 'Karnataka',        amount: 28000, reason: 'Bathroom & plumbing fix',      fundedPct: 82, trustScore: 87, lenderCount: 5, category: 'housing' },
-  { id: 'hou-4', name: 'Lata Patil',             state: 'Maharashtra',      amount: 12000, reason: 'Window grills & safety',       fundedPct: 15, trustScore: 60, lenderCount: 1, category: 'housing' },
+  { id: 'edu-1', name: 'Ananya Mishra',          state: 'Odisha',           amount: 8000,  reason: 'UPSC coaching fees',           fundedPct: 95, trustScore: 93, lenderCount: 9, category: 'education', wallet: 'ANANYAMISHRA5N...M' },
   // ── Small Business ──
-  { id: 'biz-1', name: 'Rohit Agarwal',          state: 'Delhi',            amount: 45000, reason: 'Mobile repair shop stock',     fundedPct: 85, trustScore: 91, lenderCount: 8, category: 'business' },
-  { id: 'biz-2', name: 'Champa Bai',             state: 'Chhattisgarh',     amount: 10000, reason: 'Pickle & papad business',      fundedPct: 50, trustScore: 77, lenderCount: 4, category: 'business' },
-  { id: 'biz-3', name: 'Naveen Reddy',           state: 'Telangana',        amount: 32000, reason: 'Auto-rickshaw financing',      fundedPct: 25, trustScore: 66, lenderCount: 2, category: 'business' },
-  { id: 'biz-4', name: 'Jasmine Thomas',         state: 'Goa',              amount: 22000, reason: 'Tailoring shop machines',      fundedPct: 90, trustScore: 89, lenderCount: 6, category: 'business' },
-  { id: 'biz-5', name: 'Kamal Kishore',          state: 'Bihar',            amount: 19000, reason: 'Tea stall expansion',          fundedPct: 60, trustScore: 81, lenderCount: 5, category: 'business' },
+  { id: 'biz-1', name: 'Rohit Agarwal',          state: 'Delhi',            amount: 45000, reason: 'Mobile repair shop stock',     fundedPct: 85, trustScore: 91, lenderCount: 8, category: 'business', wallet: 'ROHITAGARWAL9P...W' },
 ];
 
 // ── Voucher Candidates ──

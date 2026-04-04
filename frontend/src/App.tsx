@@ -12,22 +12,26 @@ import './styles/App.css';
 
 import { BackToHome } from './components/BackToHome';
 
+import { SnackbarProvider } from 'notistack';
+
 export default function App() {
   return (
     <BrowserRouter>
-      <div style={{ minHeight: '100vh' }}>
-        <Navbar />
-        <BackToHome />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/auth" element={<AuthPage />} />
-          <Route path="/vouch-selection" element={<VouchSelectionPage />} />
-          <Route path="/borrower/dashboard" element={<BorrowerDashboard />} />
-          <Route path="/lender/dashboard" element={<LenderDashboard />} />
-          <Route path="/loan/:appId" element={<LoanDetailPage />} />
-          <Route path="/create" element={<CreateLoanPage />} />
-        </Routes>
-      </div>
+      <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <div style={{ minHeight: '100vh' }}>
+          <Navbar />
+          <BackToHome />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/vouch-selection" element={<VouchSelectionPage />} />
+            <Route path="/borrower/dashboard" element={<BorrowerDashboard />} />
+            <Route path="/lender/dashboard" element={<LenderDashboard />} />
+            <Route path="/loan/:appId" element={<LoanDetailPage />} />
+            <Route path="/create" element={<CreateLoanPage />} />
+          </Routes>
+        </div>
+      </SnackbarProvider>
     </BrowserRouter>
   );
 }

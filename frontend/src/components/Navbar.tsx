@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { connectWallet, getConnectedAddress } from '../wallet';
 
 export const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [connectedAddress, setConnectedAddress] = useState(getConnectedAddress());
   const location = useLocation();
+
+  const handleConnect = async () => {
+    const addr = await connectWallet();
+    if (addr) setConnectedAddress(addr);
+  };
   const role = localStorage.getItem('lp_role'); // 'lender' | 'borrower' | null
   const isAuth = !!role;
 
@@ -71,6 +78,17 @@ export const Navbar = () => {
                 }}>
                   {role === 'lender' ? 'Lender' : 'Borrower'}
                 </span>
+                {role === 'lender' && (
+                  connectedAddress ? (
+                    <span style={{ fontSize: '0.75rem', opacity: 0.7, fontFamily: 'monospace' }}>
+                      {connectedAddress.slice(0, 4)}...{connectedAddress.slice(-4)}
+                    </span>
+                  ) : (
+                    <button onClick={handleConnect} className="btn btn-primary btn-xs">
+                      Connect Wallet
+                    </button>
+                  )
+                )}
                 <button onClick={handleLogout} className="btn btn-ghost btn-sm">
                   Logout
                 </button>

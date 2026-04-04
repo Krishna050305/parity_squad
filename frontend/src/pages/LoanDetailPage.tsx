@@ -3,6 +3,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import algosdk from 'algosdk';
 import { fetchLoanState, fetchLoanTxns, fundLoan, repayLoan, claimRepayment } from '../api';
 import { signAndSendTxns } from '../wallet';
+import { useSnackbar } from 'notistack';
 import {
   categories, borrowerProfiles, demoReceipts, demoInstallments, demoLenderActivity,
   getInitials, getAvatarColor, getTrustColor, getRiskColor, formatCurrency,
@@ -55,7 +56,10 @@ export const LoanDetailPage = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successTxId, setSuccessTxId] = useState<string | null>(null);
+  const { enqueueSnackbar } = useSnackbar();
+  const role = localStorage.getItem('lp_role');
   const connectedAddress = localStorage.getItem('connectedAddress');
+  const isBorrower = role === 'borrower';
 
   const application_id = isStaticProfile ? 0 : parseInt(appId || '0');
 
@@ -93,9 +97,19 @@ export const LoanDetailPage = () => {
     try {
       setActionLoading(true);
       const { txns: encodedTxns } = await actionFn(payload);
-      const txId = await signAndSendTxns(encodedTxns);
+      const { txId } = await signAndSendTxns(encodedTxns);
       setSuccessTxId(txId);
+      enqueueSnackbar('Transaction successful!', {
+        variant: 'success',
+        action: () => (
+          <a href={`https://testnet.explorer.perawallet.app/tx/${txId}`} target="_blank" rel="noreferrer" style={{ color: 'white', textDecoration: 'underline', fontSize: '0.8rem' }}>
+            View
+          </a>
+        )
+      });
     } catch (err: any) {
+      console.error('Action failed:', err);
+      enqueueSnackbar(err.message || 'Action failed', { variant: 'error' });
       setError(err.message || 'Action failed');
     } finally {
       setActionLoading(false);
@@ -251,6 +265,42 @@ export const LoanDetailPage = () => {
                 <span style={{ fontSize: '0.78rem', color: 'var(--lp-slate-muted)' }}>{lender.timeAgo}</span>
               </div>
             ))}
+            {/* Fund this Borrower (Static) */}
+            {!isBorrower && role === 'lender' && (
+              <div className="card card-elevated" style={{ padding: 'var(--space-xl)', background: 'var(--lp-surface-raised)', border: '2px solid var(--lp-green-light)' }}>
+                <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', color: 'var(--lp-slate)' }}>Fund this Borrower</h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--lp-slate-muted)', marginBottom: 'var(--space-lg)' }}>
+                  Contribution goes directly to {staticProfile.name.split(' ')[0]}'s verified wallet via Algorand TestNet.
+                </p>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input 
+                    className="form-input" 
+                    type="number" 
+                    placeholder="Amount (ALGO)" 
+                    value={fundAmount} 
+                    onChange={e => setFundAmount(e.target.value)} 
+                    style={{ flex: 1 }} 
+                  />
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={() => handleAction(fundLoan, { 
+                      lender_address: connectedAddress, 
+                      app_id: 0, // Placeholder for static funding
+                      borrower_wallet: staticProfile.wallet, // Pass wallet directly for static
+                      amount_microalgos: parseInt(fundAmount) * 1e6 
+                    })} 
+                    disabled={actionLoading || !fundAmount || !connectedAddress}
+                  >
+                    {actionLoading ? 'Processing...' : 'Fund Now'}
+                  </button>
+                </div>
+                {!connectedAddress && (
+                  <p style={{ fontSize: '0.75rem', color: 'var(--lp-danger)', marginTop: '8px' }}>
+                    Connect your wallet in the navbar to fund loans.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -274,7 +324,7 @@ export const LoanDetailPage = () => {
     );
   }
 
-  const isBorrower = connectedAddress === loan.borrower;
+  const isUserBorrower = connectedAddress === loan.borrower;
   const goalAlgo = loan.goal / 1e6;
   const fundedAlgo = loan.funded / 1e6;
   const pct = goalAlgo > 0 ? Math.min(100, Math.round((fundedAlgo / goalAlgo) * 100)) : 0;
@@ -327,7 +377,7 @@ export const LoanDetailPage = () => {
           )}
 
           {/* Fund */}
-          {statusStr === 'OPEN' && !isBorrower && (
+          {statusStr === 'OPEN' && !isUserBorrower && (
             <div style={{ background: 'var(--lp-surface-raised)', padding: 'var(--space-lg)', borderRadius: 'var(--radius-md)', marginTop: 'var(--space-lg)' }}>
               <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', color: 'var(--lp-slate)' }}>Fund this Loan</h3>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -340,7 +390,7 @@ export const LoanDetailPage = () => {
           )}
 
           {/* Repay */}
-          {statusStr === 'REPAYING' && isBorrower && (
+          {statusStr === 'REPAYING' && isUserBorrower && (
             <div style={{ background: 'rgba(200,151,43,0.06)', padding: 'var(--space-lg)', borderRadius: 'var(--radius-md)', marginTop: 'var(--space-lg)' }}>
               <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--lp-gold-dark)', marginBottom: 'var(--space-md)' }}>Make Repayment</h3>
               <div style={{ display: 'flex', gap: '8px' }}>
