@@ -105,6 +105,9 @@ export const createLoan = (params: {
   };
 }) => post(`${BASE_URL}/loans/create`, params);
 
+export const confirmLoanCreation = (loanId: string, appId: number) =>
+  post(`${BASE_URL}/loans/${loanId}/confirm`, { app_id: appId });
+
 export const fundLoan = (params: {
   lender_address: string;
   app_id: number;
@@ -163,6 +166,9 @@ export const getUserReceipts = (walletAddress: string) =>
 
 export const getUserProfile = (walletAddress: string) =>
   fetch(`${BASE_URL}/users/${walletAddress}/profile`).then(r => r.json());
+
+export const getUserContributions = (walletAddress: string) =>
+  fetch(`${BASE_URL}/users/${walletAddress}/contributions`).then(r => r.json());
 
 // ══════════════════════════════════════════════════════════════════
 //  REMINDERS & SCORES
