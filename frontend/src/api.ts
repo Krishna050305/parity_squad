@@ -9,7 +9,11 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 const headers = { 'Content-Type': 'application/json' };
 const post = (url: string, body: object) =>
-  fetch(url, { method: 'POST', headers, body: JSON.stringify(body) }).then(r => r.json());
+  fetch(url, { method: 'POST', headers, body: JSON.stringify(body) }).then(async (r) => {
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail?.message || data.detail || 'API request failed');
+    return data;
+  });
 
 // ══════════════════════════════════════════════════════════════════
 //  AUTH & USER MANAGEMENT
