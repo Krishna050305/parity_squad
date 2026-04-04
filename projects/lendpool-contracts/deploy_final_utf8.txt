@@ -1,0 +1,3 @@
+﻿Deploying from: ISQOKJEG25A2NT7D2F5X3VQ5ZXBGBI4JTU4F3GLAO5OIT4QE7P7TINZKLM
+Deploying...
+Deployment failed: asdict() should be called on dataclass instances

@@ -16,19 +16,12 @@ CREATE_SELECTOR = algosdk.abi.Method.from_signature("create_loan(uint64,uint64,u
 FUND_SELECTOR = algosdk.abi.Method.from_signature("fund_loan(pay)void").get_selector()
 REPAY_SELECTOR = algosdk.abi.Method.from_signature("repay_loan(pay)void").get_selector()
 CLAIM_SELECTOR = algosdk.abi.Method.from_signature("claim_repayment()void").get_selector()
-ADD_GUARANTOR_SELECTOR = algosdk.abi.Method.from_signature("add_guarantor(address)void").get_selector()
+GUARANTOR_SELECTOR = algosdk.abi.Method.from_signature("add_guarantor(address)void").get_selector()
 
 def encode_txns(txns: list) -> list[str]:
     """Base64 msgpack-encode a list of transactions."""
-    results = []
-    for txn in txns:
-        encoded = algosdk.encoding.msgpack_encode(txn)
-        if isinstance(encoded, bytes):
-            results.append(base64.b64encode(encoded).decode("utf-8"))
-        else:
-            # algosdk v3 returns a base64 string directly
-            results.append(encoded)
-    return results
+    # algosdk.encoding.msgpack_encode() already returns a base64 string
+    return [algosdk.encoding.msgpack_encode(txn) for txn in txns]
 
 def get_approval_clear_programs():
     path = os.path.join(os.path.dirname(__file__), '..', 'smart_contracts', 'artifacts', 'loan_contract', 'LoanContract.arc56.json')
@@ -122,13 +115,11 @@ def build_add_guarantor_txn(borrower_address: str, app_id: int, guarantor_addres
     algod_client = get_algod()
     sp = algod_client.suggested_params()
     
-    # Decode Algorand address to 32-byte public key for ARC4 address type
-    decoded = algosdk.encoding.decode_address(guarantor_address)
-    
     txn = ApplicationNoOpTxn(
         sender=borrower_address,
         sp=sp,
         index=app_id,
-        app_args=[ADD_GUARANTOR_SELECTOR, decoded]
+        app_args=[GUARANTOR_SELECTOR],
+        accounts=[guarantor_address]
     )
     return encode_txns([txn])

@@ -1,0 +1,326 @@
+﻿poetry : 2026-04-03 
+15:13:39,792 INFO      : 
+Loading .env
+At line:1 char:1
++ poetry run python -m 
+smart_contracts build > 
+build_output.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (2  
+  026-04-03 15:1... : L   
+ oading .env:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+2026-04-03 15:13:39,797 
+INFO      : Building app 
+at D:\Hackathons\parity_sq
+uad\projects\lendpool-cont
+racts\smart_contracts\loan
+_contract\contract.py
+2026-04-03 15:13:39,798 
+INFO      : Exporting D:\H
+ackathons\parity_squad\pro
+jects\lendpool-contracts\s
+mart_contracts\loan_contra
+ct\contract.py to D:\Hacka
+thons\parity_squad\project
+s\lendpool-contracts\smart
+_contracts\artifacts\loan_
+contract
+Traceback (most recent 
+call last):
+  File "<frozen runpy>", 
+line 198, in 
+_run_module_as_main
+  File "<frozen runpy>", 
+line 88, in _run_code
+  File "D:\Hackathons\pari
+ty_squad\projects\lendpool
+-contracts\smart_contracts
+\__main__.py", line 215, 
+in <module>
+    main(sys.argv[1])
+    ~~~~^^^^^^^^^^^^^
+  File "D:\Hackathons\pari
+ty_squad\projects\lendpool
+-contracts\smart_contracts
+\__main__.py", line 183, 
+in main
+    build(artifact_path / 
+contract.name, 
+contract.path)
+    ~~~~~^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^
+  File "D:\Hackathons\pari
+ty_squad\projects\lendpool
+-contracts\smart_contracts
+\__main__.py", line 119, 
+in build
+    raise 
+Exception(f"Could not 
+build contract:\n{build_re
+sult.stdout}")
+Exception: Could not 
+build contract:
+puyapy is already on your 
+PATH and installed at D:\H
+ackathons\parity_squad\pro
+    jects\lendpool-contrac
+ts\.venv\Scripts\puyapy.EX
+E. Downloading and running
+    anyway.
+info: using puyapy 
+version 5.7.1
+info: using python search 
+path: ['C:\\Program Files\
+\Python313\\python313.zip'
+, 'C:\\Program 
+Files\\Python313\\DLLs', 
+'C:\\Program 
+Files\\Python313', 'D:\\Ha
+ckathons\\parity_squad\\pr
+ojects\\lendpool-contracts
+\\.venv', 'D:\\Hackathons\
+\parity_squad\\projects\\l
+endpool-contracts\\.venv\\
+Lib\\site-packages']
+smart_contracts\loan_contr
+act\contract.py:24:15 
+error: unsupported 
+statement type at module 
+level
+                          
+                          
+  STATUS_OPEN = UInt64(1)
+                          
+                          
+                ^~~~~~~~~
+smart_contracts\loan_contr
+act\contract.py:25:17 
+error: unsupported 
+statement type at module 
+level
+                          
+                          
+  STATUS_FUNDED = 
+UInt64(2)
+                          
+                          
+                  
+^~~~~~~~~
+smart_contracts\loan_contr
+act\contract.py:26:19 
+error: unsupported 
+statement type at module 
+level
+                          
+                          
+  STATUS_REPAYING = 
+UInt64(3)
+                          
+                          
+                    
+^~~~~~~~~
+smart_contracts\loan_contr
+act\contract.py:27:17 
+error: unsupported 
+statement type at module 
+level
+                          
+                          
+  STATUS_CLOSED = 
+UInt64(4)
+                          
+                          
+                  
+^~~~~~~~~
+smart_contracts\loan_contr
+act\contract.py:28:20 
+error: unsupported 
+statement type at module 
+level
+                          
+                          
+  STATUS_DEFAULTED = 
+UInt64(5)
+                          
+                          
+                     
+^~~~~~~~~
+smart_contracts\loan_contr
+act\contract.py:67:29 
+error: Unable to resolve 
+global constant reference
+                          
+                          
+          
+self.status.value = 
+STATUS_OPEN
+                          
+                          
+                          
+    ^~~~~~~~~~~
+smart_contracts\loan_contr
+act\contract.py:80:37 
+error: Unable to resolve 
+global constant reference
+                          
+                          
+          assert 
+self.status.value == 
+STATUS_OPEN, "Loan is not 
+open for funding"
+                          
+                          
+                          
+            ^~~~~~~~~~~
+smart_contracts\loan_contr
+act\contract.py:99:37 
+error: Unable to resolve 
+global constant reference
+                          
+                          
+          assert 
+self.status.value == 
+STATUS_OPEN, "Loan is not 
+in OPEN status"
+                          
+                          
+                          
+            ^~~~~~~~~~~
+smart_contracts\loan_contr
+act\contract.py:110:29 
+error: Unable to resolve 
+global constant reference
+                          
+                          
+           
+self.status.value = 
+STATUS_REPAYING
+                          
+                          
+                          
+     ^~~~~~~~~~~~~~~
+smart_contracts\loan_contr
+act\contract.py:118:37 
+error: Unable to resolve 
+global constant reference
+                          
+                          
+           assert 
+self.status.value == 
+STATUS_REPAYING, "Loan is 
+not in repayment phase"
+                          
+                          
+                          
+             
+^~~~~~~~~~~~~~~
+smart_contracts\loan_contr
+act\contract.py:135:37 
+error: Unable to resolve 
+global constant reference
+                          
+                          
+           assert 
+self.status.value == 
+STATUS_CLOSED, "Loan is 
+not closed yet"
+                          
+                          
+                          
+             ^~~~~~~~~~~~~
+smart_contracts\loan_contr
+act\contract.py:160:37 
+error: Unable to resolve 
+global constant reference
+                          
+                          
+           assert 
+self.status.value == 
+STATUS_OPEN, "Can only 
+add guarantor when loan 
+is OPEN"
+                          
+                          
+                          
+             ^~~~~~~~~~~
+smart_contracts\loan_contr
+act\contract.py:169:37 
+error: Unable to resolve 
+global constant reference
+                          
+                          
+           assert 
+self.status.value == 
+STATUS_REPAYING, "Loan 
+must be in REPAYING 
+status"
+                          
+                          
+                          
+             
+^~~~~~~~~~~~~~~
+
+An error occurred during 
+compile. Please ensure 
+that any supplied 
+arguments are valid and 
+any files passed are 
+valid Algorand Python 
+code before retrying.
+
+puyapy is already on your PATH and installed at D:\Hackathons\parity_squad\pro
+    jects\lendpool-contracts\.venv\Scripts\puyapy.EXE. Downloading and running
+    anyway.
+info: using puyapy version 5.7.1
+info: using python search path: ['C:\\Program Files\\Python313\\python313.zip', 'C:\\Program Files\\Python313\\DLLs', 'C:\\Program Files\\Python313', 'D:\\Hackathons\\parity_squad\\projects\\lendpool-contracts\\.venv', 'D:\\Hackathons\\parity_squad\\projects\\lendpool-contracts\\.venv\\Lib\\site-packages']
+smart_contracts\loan_contract\contract.py:24:15 error: unsupported statement type at module level
+                                                      STATUS_OPEN = UInt64(1)
+                                                                    ^~~~~~~~~
+smart_contracts\loan_contract\contract.py:25:17 error: unsupported statement type at module level
+                                                      STATUS_FUNDED = UInt64(2)
+                                                                      ^~~~~~~~~
+smart_contracts\loan_contract\contract.py:26:19 error: unsupported statement type at module level
+                                                      STATUS_REPAYING = UInt64(3)
+                                                                        ^~~~~~~~~
+smart_contracts\loan_contract\contract.py:27:17 error: unsupported statement type at module level
+                                                      STATUS_CLOSED = UInt64(4)
+                                                                      ^~~~~~~~~
+smart_contracts\loan_contract\contract.py:28:20 error: unsupported statement type at module level
+                                                      STATUS_DEFAULTED = UInt64(5)
+                                                                         ^~~~~~~~~
+smart_contracts\loan_contract\contract.py:67:29 error: Unable to resolve global constant reference
+                                                              self.status.value = STATUS_OPEN
+                                                                                  ^~~~~~~~~~~
+smart_contracts\loan_contract\contract.py:80:37 error: Unable to resolve global constant reference
+                                                              assert self.status.value == STATUS_OPEN, "Loan is not open for funding"
+                                                                                          ^~~~~~~~~~~
+smart_contracts\loan_contract\contract.py:99:37 error: Unable to resolve global constant reference
+                                                              assert self.status.value == STATUS_OPEN, "Loan is not in OPEN status"
+                                                                                          ^~~~~~~~~~~
+smart_contracts\loan_contract\contract.py:110:29 error: Unable to resolve global constant reference
+                                                               self.status.value = STATUS_REPAYING
+                                                                                   ^~~~~~~~~~~~~~~
+smart_contracts\loan_contract\contract.py:118:37 error: Unable to resolve global constant reference
+                                                               assert self.status.value == STATUS_REPAYING, "Loan is not in repayment phase"
+                                                                                           ^~~~~~~~~~~~~~~
+smart_contracts\loan_contract\contract.py:135:37 error: Unable to resolve global constant reference
+                                                               assert self.status.value == STATUS_CLOSED, "Loan is not closed yet"
+                                                                                           ^~~~~~~~~~~~~
+smart_contracts\loan_contract\contract.py:160:37 error: Unable to resolve global constant reference
+                                                               assert self.status.value == STATUS_OPEN, "Can only add guarantor when loan is OPEN"
+                                                                                           ^~~~~~~~~~~
+smart_contracts\loan_contract\contract.py:169:37 error: Unable to resolve global constant reference
+                                                               assert self.status.value == STATUS_REPAYING, "Loan must be in REPAYING status"
+                                                                                           ^~~~~~~~~~~~~~~
+
+An error occurred during compile. Please ensure that any supplied arguments are valid and any files passed are valid Algorand Python code before retrying.
+

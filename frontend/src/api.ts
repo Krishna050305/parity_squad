@@ -8,40 +8,12 @@ import algosdk from 'algosdk';
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 const headers = { 'Content-Type': 'application/json' };
-
-const get = async (url: string) => {
-  let response;
-  try {
-    response = await fetch(url);
-  } catch (err) {
-    console.error(`[NETWORK ERROR] ${url}:`, err);
-    throw new Error("Backend server is not running. Please start the backend or check your connection.");
-  }
-  if (!response.ok) {
-    console.warn(`[API GET ERROR] ${url}: Status ${response.status}`);
-    throw new Error(`API error: ${response.status}`);
-  }
-  return response.json();
-};
-
-const post = async (url: string, body: object) => {
-  let response;
-  try {
-    response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
-  } catch (err) {
-    console.error(`[NETWORK ERROR] ${url}:`, err);
-    throw new Error("Backend server is not running. Please start the backend or check your connection.");
-  }
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.warn(`[API POST ERROR] ${url}: Status ${response.status}`, errorText);
-    throw new Error(`Backend error (${response.status}): ${errorText}`);
-  }
-  return response.json();
-};
-
-export const getUserContributions = (wallet: string) =>
-  get(`${BASE_URL}/users/${wallet}/contributions`);
+const post = (url: string, body: object) =>
+  fetch(url, { method: 'POST', headers, body: JSON.stringify(body) }).then(async (r) => {
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail?.message || data.detail || 'API request failed');
+    return data;
+  });
 
 // ══════════════════════════════════════════════════════════════════
 //  AUTH & USER MANAGEMENT
@@ -65,7 +37,7 @@ export const borrowerRegister = (params: {
 // ══════════════════════════════════════════════════════════════════
 
 export const getCommunityVouchers = () =>
-  get(`${BASE_URL}/community/vouchers`);
+  fetch(`${BASE_URL}/community/vouchers`).then(r => r.json());
 
 export const submitVouchPayment = (borrowerAddress: string, voucherAddress: string) =>
   post(`${BASE_URL}/community/vouch-payment`, {
@@ -86,7 +58,7 @@ export const requestGuarantor = (borrowerAddress: string, guarantorAddress: stri
 // ══════════════════════════════════════════════════════════════════
 
 export const getNotifications = (walletAddress: string) =>
-  get(`${BASE_URL}/notifications/${walletAddress}`);
+  fetch(`${BASE_URL}/notifications/${walletAddress}`).then(r => r.json());
 
 export const approveGuarantorRequest = (notificationId: string, guarantorAddress: string) =>
   post(`${BASE_URL}/notifications/${notificationId}/approve`, {
@@ -94,7 +66,7 @@ export const approveGuarantorRequest = (notificationId: string, guarantorAddress
   });
 
 export const declineGuarantorRequest = (notificationId: string) =>
-  post(`${BASE_URL}/notifications/${notificationId}/decline`, {});
+  fetch(`${BASE_URL}/notifications/${notificationId}/decline`, { method: 'POST' }).then(r => r.json());
 
 // ══════════════════════════════════════════════════════════════════
 //  LOANS (existing + enhanced)
@@ -110,14 +82,14 @@ export const fetchLoans = (filters?: {
   if (filters?.min_trust) params.set('min_trust', String(filters.min_trust));
   if (filters?.status) params.set('status', String(filters.status));
   const qs = params.toString();
-  return get(`${BASE_URL}/loans${qs ? `?${qs}` : ''}`);
+  return fetch(`${BASE_URL}/loans${qs ? `?${qs}` : ''}`).then(r => r.json());
 };
 
 export const fetchLoanState = (appId: number) =>
-  get(`${BASE_URL}/loans/${appId}/state`);
+  fetch(`${BASE_URL}/loans/${appId}/state`).then(r => r.json());
 
 export const fetchLoanTxns = (appId: number) =>
-  get(`${BASE_URL}/loans/${appId}/txns`);
+  fetch(`${BASE_URL}/loans/${appId}/txns`).then(r => r.json());
 
 export const createLoan = (params: {
   borrower_address: string;
@@ -132,9 +104,6 @@ export const createLoan = (params: {
     start_date: string;
   };
 }) => post(`${BASE_URL}/loans/create`, params);
-
-export const confirmLoanCreation = (loanId: string, appId: number) =>
-  post(`${BASE_URL}/loans/${loanId}/confirm?app_id=${appId}`, {});
 
 export const fundLoan = (params: {
   lender_address: string;
@@ -175,7 +144,7 @@ export const createInstallmentSchedule = (
 ) => post(`${BASE_URL}/loans/${appId}/schedule`, params);
 
 export const getInstallmentSchedule = (appId: number) =>
-  get(`${BASE_URL}/loans/${appId}/schedule`);
+  fetch(`${BASE_URL}/loans/${appId}/schedule`).then(r => r.json());
 
 export const payInstallment = (appId: number, installmentNo: number, borrowerAddress: string) =>
   post(`${BASE_URL}/loans/${appId}/installment/${installmentNo}/pay`, {
@@ -190,10 +159,10 @@ export const generateReceipt = (appId: number) =>
   post(`${BASE_URL}/loans/${appId}/generate-receipt`, { app_id: appId });
 
 export const getUserReceipts = (walletAddress: string) =>
-  get(`${BASE_URL}/users/${walletAddress}/receipts`);
+  fetch(`${BASE_URL}/users/${walletAddress}/receipts`).then(r => r.json());
 
 export const getUserProfile = (walletAddress: string) =>
-  get(`${BASE_URL}/users/${walletAddress}/profile`);
+  fetch(`${BASE_URL}/users/${walletAddress}/profile`).then(r => r.json());
 
 // ══════════════════════════════════════════════════════════════════
 //  REMINDERS & SCORES
@@ -213,7 +182,7 @@ export const updateScore = (walletAddress: string, eventType: string) =>
 // ══════════════════════════════════════════════════════════════════
 
 export const healthCheck = () =>
-  get(`${BASE_URL}/health`);
+  fetch(`${BASE_URL}/health`).then(r => r.json());
 
 // ══════════════════════════════════════════════════════════════════
 //  UTILITIES (kept from original)

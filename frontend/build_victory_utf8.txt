@@ -1,0 +1,120 @@
+﻿
+> lendpool-frontend@0.1.0 build
+> npm run generate:app-clients && tsc && vite build
+
+
+> lendpool-frontend@0.1.0 generate:app-clients
+> algokit project link --all
+
+Generating TypeScript client code for application specified in D:\Hackathons\parity_squad\projects\lendpool-contracts\smart_contracts\artifacts\loan_contract\LoanContract.arc56.json and writing to D:\Hackathons\parity_squad\frontend\src\contracts\LoanContract.ts
+Reading application.json file from path D:\Hackathons\parity_squad\projects\lendpool-contracts\smart_contracts\artifacts\loan_contract\LoanContract.arc56.json
+Generating TS client for LoanContract
+Writing TS client to D:\Hackathons\parity_squad\frontend\src\contracts\LoanContract.ts
+Operation completed successfully
+
+1/1: Finished processing lendpool-contracts
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 764 modules transformed.
+node.exe : [31mx[39m 
+Build failed in 3.41s
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (  
+  [31mx[39m Build fail   
+ ed in 3.41s:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+[31merror during build:
+[31msrc/Home.tsx (5:7): 
+"default" is not exported 
+by "node_modules/@algorand
+foundation/algokit-utils/i
+ndex.mjs", imported by 
+"src/Home.tsx".[31m
+file: [36mD:/Hackathons/p
+arity_squad/frontend/src/H
+ome.tsx:5:7[31m
+[33m
+3: import ConnectWallet 
+from './components/Connect
+Wallet'
+4: import axios from 
+'axios'
+5: import algokit_utils 
+from '@algorandfoundation/
+algokit-utils'
+          ^
+6: import algosdk from 
+'algosdk'
+7: import { useSnackbar } 
+from 'notistack'
+[31m
+    at getRollupError (fil
+e:///D:/Hackathons/parity_
+squad/frontend/node_module
+s/rollup/dist/es/shared/pa
+rseAst.js:406:41)
+    at error (file:///D:/H
+ackathons/parity_squad/fro
+ntend/node_modules/rollup/
+dist/es/shared/parseAst.js
+:402:42)
+    at Module.error (file:
+///D:/Hackathons/parity_sq
+uad/frontend/node_modules/
+rollup/dist/es/shared/node
+-entry.js:17380:16)
+    at 
+Module.traceVariable (file
+:///D:/Hackathons/parity_s
+quad/frontend/node_modules
+/rollup/dist/es/shared/nod
+e-entry.js:17813:29)
+    at 
+ModuleScope.findVariable (
+file:///D:/Hackathons/pari
+ty_squad/frontend/node_mod
+ules/rollup/dist/es/shared
+/node-entry.js:15403:39)
+    at ReturnValueScope.fi
+ndVariable (file:///D:/Hac
+kathons/parity_squad/front
+end/node_modules/rollup/di
+st/es/shared/node-entry.js
+:5676:38)
+    at FunctionBodyScope.f
+indVariable (file:///D:/Ha
+ckathons/parity_squad/fron
+tend/node_modules/rollup/d
+ist/es/shared/node-entry.j
+s:5676:38)
+    at ReturnValueScope.fi
+ndVariable (file:///D:/Hac
+kathons/parity_squad/front
+end/node_modules/rollup/di
+st/es/shared/node-entry.js
+:5676:38)
+    at FunctionBodyScope.f
+indVariable (file:///D:/Ha
+ckathons/parity_squad/fron
+tend/node_modules/rollup/d
+ist/es/shared/node-entry.j
+s:5676:38)
+    at 
+BlockScope.findVariable (f
+ile:///D:/Hackathons/parit
+y_squad/frontend/node_modu
+les/rollup/dist/es/shared/
+node-entry.js:5676:38)[39
+m
