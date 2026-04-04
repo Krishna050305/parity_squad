@@ -16,7 +16,7 @@ CREATE_SELECTOR = algosdk.abi.Method.from_signature("create_loan(uint64,uint64,u
 FUND_SELECTOR = algosdk.abi.Method.from_signature("fund_loan(pay)void").get_selector()
 REPAY_SELECTOR = algosdk.abi.Method.from_signature("repay_loan(pay)void").get_selector()
 CLAIM_SELECTOR = algosdk.abi.Method.from_signature("claim_repayment()void").get_selector()
-GUARANTOR_SELECTOR = algosdk.abi.Method.from_signature("add_guarantor(address)void").get_selector()
+ADD_GUARANTOR_SELECTOR = algosdk.abi.Method.from_signature("add_guarantor(address)void").get_selector()
 
 def encode_txns(txns: list) -> list[str]:
     """Base64 msgpack-encode a list of transactions."""
@@ -122,11 +122,13 @@ def build_add_guarantor_txn(borrower_address: str, app_id: int, guarantor_addres
     algod_client = get_algod()
     sp = algod_client.suggested_params()
     
+    # Decode Algorand address to 32-byte public key for ARC4 address type
+    decoded = algosdk.encoding.decode_address(guarantor_address)
+    
     txn = ApplicationNoOpTxn(
         sender=borrower_address,
         sp=sp,
         index=app_id,
-        app_args=[GUARANTOR_SELECTOR],
-        accounts=[guarantor_address]
+        app_args=[ADD_GUARANTOR_SELECTOR, decoded]
     )
     return encode_txns([txn])

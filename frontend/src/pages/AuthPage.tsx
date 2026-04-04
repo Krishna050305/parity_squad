@@ -456,7 +456,10 @@ export const AuthPage = () => {
                             <div style={{ textAlign: 'center', padding: 'var(--space-xl) 0' }}>
                                 <h3 style={{ color: 'var(--lp-green)', marginBottom: '8px' }}>Tier {targetTier} ASA Minted!</h3>
                                 <p style={{ color: 'var(--lp-slate-muted)' }}>You successfully proved your identity for Tier {targetTier}.</p>
-                                <button className="btn btn-primary btn-lg" style={{ marginTop: '24px', width: '100%' }} onClick={() => setMasterStep(2)}>
+                                <button className="btn btn-primary btn-lg" style={{ marginTop: '24px', width: '100%' }} onClick={() => {
+                                    localStorage.setItem('lp_tier', targetTier.toString());
+                                    setMasterStep(2);
+                                }}>
                                     Continue to Loan Path →
                                 </button>
                             </div>
@@ -534,7 +537,15 @@ export const AuthPage = () => {
                             <div style={{ fontSize: '0.85rem', color: 'var(--lp-slate-muted)' }}>Borrow within your Tier limit, no vouch needed.</div>
                         </div>
 
-                        <button className="btn btn-primary" disabled={!selectedPath} onClick={() => setMasterStep(3)}>Next Step →</button>
+                        <button className="btn btn-primary" disabled={!selectedPath} onClick={() => {
+                            if (selectedPath === 'A') {
+                                navigate('/vouch-selection');
+                            } else if (selectedPath === 'B') {
+                                navigate('/choose-guarantor');
+                            } else {
+                                navigate('/create-loan');
+                            }
+                        }}>Next Step →</button>
                     </div>
                 )}
 

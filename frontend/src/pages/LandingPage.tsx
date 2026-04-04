@@ -54,7 +54,7 @@ const BorrowerCard = ({ profile, onLendClick }: BorrowerCardProps) => {
           <div className="borrower-card__location">{profile.state}</div>
         </div>
         <span className={`trust-badge ${trustClass}`}>
-          <span style={{ fontSize: '0.65rem' }}> </span> {profile.trustScore}
+          <span style={{ fontSize: '0.65rem' }}>⬣</span> {profile.trustScore}
         </span>
       </div>
 
@@ -195,7 +195,7 @@ const LendNowModal = ({
 };
 
 /* ── Landing Page ─────────────────────────────────────────────── */
-export const HomePage = () => {
+export const LandingPage = () => {
   const [activeCategory, setActiveCategory] = useState<Category>('agriculture');
   const [activeLendProfile, setActiveLendProfile] = useState<BorrowerProfile | null>(null);
   const navigate = useNavigate();
